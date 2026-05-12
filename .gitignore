@@ -1,0 +1,21 @@
+# Godot 4 cache
+.godot/
+
+# Godot 3 import cache
+.import/
+
+# Export files
+export.cfg
+export_presets.cfg
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Logs
+*.log
