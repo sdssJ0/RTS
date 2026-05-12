@@ -1,23 +1,42 @@
 extends Control
 
 @export var placement_system_path: NodePath = "../../Systems/PlacementSystem"
-@export var basic_building_scene: PackedScene
+@export var building_catalog_path: NodePath = "../../Systems/BuildingCatalog"
 
 @onready var placement_system: PlacementSystem = get_node(placement_system_path)
+@onready var building_catalog: BuildingCatalog = get_node(building_catalog_path)
 @onready var build_panel: VBoxContainer = $BuildPanel
-@onready var build_basic_button: Button = $BuildPanel/BuildBasicButton
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	build_panel.mouse_filter = Control.MOUSE_FILTER_PASS
-	build_basic_button.mouse_filter = Control.MOUSE_FILTER_STOP
 
-	build_basic_button.text = "放置建筑"
-	build_basic_button.pressed.connect(_on_build_basic_button_pressed)
+	_rebuild_build_buttons()
 
-func _on_build_basic_button_pressed() -> void:
-	if basic_building_scene == null:
-		push_error("Basic building scene is not assigned on HUD.")
-		return
+func _rebuild_build_buttons() -> void:
+	for child in build_panel.get_children():
+		child.queue_free()
 
-	placement_system.start_placing(basic_building_scene)
+	var configs := building_catalog.get_all_configs()
+
+	for config in configs:
+		if config == null:
+			continue
+
+		var button := Button.new()
+		button.text = _get_button_text(config)
+		button.mouse_filter = Control.MOUSE_FILTER_STOP
+
+		build_panel.add_child(button)
+
+		button.pressed.connect(_on_build_button_pressed.bind(config))
+
+func _get_button_text(config: BuildingConfig) -> String:
+	if config.cost > 0:
+		return "%s  $%d" % [config.display_name, config.cost]
+
+	return config.display_name
+
+func _on_build_button_pressed(config: BuildingConfig) -> void:
+	print("HUD: selected building:", config.display_name)
+	placement_system.start_placing(config)

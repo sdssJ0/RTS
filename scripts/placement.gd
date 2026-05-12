@@ -3,39 +3,108 @@ extends Node
 
 @export var grid_system_path: NodePath = "../GridSystem"
 @export var building_manager_path: NodePath = "../BuildingManager"
-@export var preview_root_path: NodePath = "../../World/PreviewRoot"
-@export var camera_path: NodePath = "../../World/Camera2D"
+@export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
 
-@onready var grid_system: GridSystem = get_node(grid_system_path)
-@onready var building_manager: BuildingManager = get_node(building_manager_path)
-@onready var preview_root: Node2D = get_node(preview_root_path)
-@onready var camera_2d: Camera2D = get_node(camera_path)
+@export var preview_building_scene: PackedScene
+@export var debug_mouse_position: bool = true
+
+@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
+@onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
+@onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
 
 var is_placing: bool = false
-var current_building_scene: PackedScene = null
+var current_config: BuildingConfig = null
 
 var preview_instance: BasicBuilding = null
+
 var current_cell: Vector2i = Vector2i.ZERO
 var current_can_place: bool = false
+var current_mouse_world_position: Vector2 = Vector2.ZERO
+
+var ignore_place_until_next_frame: bool = false
+
+
+func _ready() -> void:
+	set_process_input(true)
+
+	print("PlacementSystem ready.")
+
+	if grid_system == null:
+		push_error("PlacementSystem: GridSystem not found. Path = " + str(grid_system_path))
+	else:
+		print("PlacementSystem: GridSystem found:", grid_system.name)
+
+	if building_manager == null:
+		push_error("PlacementSystem: BuildingManager not found. Path = " + str(building_manager_path))
+	else:
+		print("PlacementSystem: BuildingManager found:", building_manager.name)
+
+	if preview_root == null:
+		push_error("PlacementSystem: PreviewRoot not found. Path = " + str(preview_root_path))
+	else:
+		print("PlacementSystem: PreviewRoot found:", preview_root.name)
+
+	if preview_building_scene == null:
+		push_warning("PlacementSystem: Preview Building Scene is not assigned.")
+	else:
+		print("PlacementSystem: Preview Building Scene assigned.")
+
 
 func _process(_delta: float) -> void:
 	if not is_placing:
 		return
 
-	_update_preview()
+	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
+	_update_preview_visual()
 
-func _unhandled_input(event: InputEvent) -> void:
+	if ignore_place_until_next_frame:
+		ignore_place_until_next_frame = false
+
+
+func _input(event: InputEvent) -> void:
 	if not is_placing:
 		return
 
 	if event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 
-		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+		if not mouse_event.pressed:
+			return
+
+		if debug_mouse_position:
+			print("PlacementSystem: mouse button event.")
+			print("  Button index:", mouse_event.button_index)
+			print("  Screen position:", mouse_event.position)
+
+		if _should_block_world_input_by_ui():
+			if debug_mouse_position:
+				var hovered_control := get_viewport().gui_get_hovered_control()
+				if hovered_control != null:
+					print("PlacementSystem: click blocked by UI:", hovered_control.name)
+				else:
+					print("PlacementSystem: click blocked by UI.")
+			return
+
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			if ignore_place_until_next_frame:
+				if debug_mouse_position:
+					print("PlacementSystem: ignored first click after selecting building.")
+				get_viewport().set_input_as_handled()
+				return
+
+			_update_mouse_cell_from_screen_position(mouse_event.position)
+			_update_preview_visual()
+
+			if debug_mouse_position:
+				print("Click screen:", mouse_event.position)
+				print("Mouse world:", current_mouse_world_position)
+				print("Current cell:", current_cell)
+				print("Can place:", current_can_place)
+
 			_try_place_current_building()
 			get_viewport().set_input_as_handled()
 
-		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
 			cancel_placing()
 			get_viewport().set_input_as_handled()
 
@@ -46,80 +115,165 @@ func _unhandled_input(event: InputEvent) -> void:
 			cancel_placing()
 			get_viewport().set_input_as_handled()
 
-func start_placing(building_scene: PackedScene) -> void:
+
+func start_placing(config: BuildingConfig) -> void:
 	cancel_placing()
 
-	if building_scene == null:
-		push_error("Cannot start placing. Building scene is null.")
+	if config == null:
+		push_error("PlacementSystem: config is null.")
 		return
 
-	current_building_scene = building_scene
+	if grid_system == null:
+		push_error("PlacementSystem: grid_system is null.")
+		return
+
+	if building_manager == null:
+		push_error("PlacementSystem: building_manager is null.")
+		return
+
+	if preview_root == null:
+		push_error("PlacementSystem: preview_root is null.")
+		return
+
+	if preview_building_scene == null:
+		push_error("PlacementSystem: preview_building_scene is not assigned.")
+		return
+
+	current_config = config
 	is_placing = true
+	ignore_place_until_next_frame = true
 
 	_create_preview()
 
-	print("Start placing building.")
+	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
+	_update_preview_visual()
+
+	print("Start placing:", config.display_name)
+
 
 func cancel_placing() -> void:
 	is_placing = false
-	current_building_scene = null
+	current_config = null
 	current_cell = Vector2i.ZERO
 	current_can_place = false
+	current_mouse_world_position = Vector2.ZERO
+	ignore_place_until_next_frame = false
 
 	if preview_instance != null:
 		preview_instance.queue_free()
 		preview_instance = null
 
+
 func _create_preview() -> void:
-	if current_building_scene == null:
+	if current_config == null:
 		return
 
-	preview_instance = current_building_scene.instantiate() as BasicBuilding
+	if preview_building_scene == null:
+		push_error("PlacementSystem: preview_building_scene is not assigned.")
+		return
+
+	var instance := preview_building_scene.instantiate()
+	preview_instance = instance as BasicBuilding
 
 	if preview_instance == null:
-		push_error("Preview scene root must be BasicBuilding.")
+		push_error("PlacementSystem: preview scene root must be BasicBuilding.")
+		instance.queue_free()
 		return
 
 	preview_root.add_child(preview_instance)
 
-	preview_instance.z_index = 1000
-	preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.55)
+	preview_instance.setup(current_config, Vector2i.ZERO)
+	preview_instance.z_index = 10000
+	preview_instance.visible = true
+	preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.65)
 
-func _update_preview() -> void:
+	print("PlacementSystem: preview created.")
+
+
+func _screen_to_world_position(screen_position: Vector2) -> Vector2:
+	var canvas_transform: Transform2D = get_viewport().get_canvas_transform()
+	return canvas_transform.affine_inverse() * screen_position
+
+
+func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
+	if current_config == null:
+		return
+
+	if grid_system == null:
+		return
+
+	current_mouse_world_position = _screen_to_world_position(screen_position)
+	current_cell = grid_system.world_to_cell(current_mouse_world_position)
+
+	current_can_place = grid_system.can_place_area(
+		current_cell,
+		current_config.size_in_cells
+	)
+
+
+func _update_preview_visual() -> void:
 	if preview_instance == null:
 		return
 
-	var mouse_world_position: Vector2 = camera_2d.get_global_mouse_position()
+	if current_config == null:
+		return
 
-	current_cell = grid_system.world_to_cell(mouse_world_position)
+	if grid_system == null:
+		return
 
 	var snapped_position: Vector2 = grid_system.cell_to_world(current_cell)
-	preview_instance.position = snapped_position
 
-	current_can_place = grid_system.can_place_at(current_cell)
+	preview_instance.global_position = snapped_position
 
 	if current_can_place:
-		preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.55)
+		preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.65)
 	else:
-		preview_instance.modulate = Color(1.0, 0.2, 0.2, 0.55)
+		preview_instance.modulate = Color(1.0, 0.2, 0.2, 0.65)
+
 
 func _try_place_current_building() -> void:
-	if current_building_scene == null:
+	if current_config == null:
 		return
+
+	if building_manager == null:
+		push_error("PlacementSystem: building_manager is null.")
+		return
+
+	if debug_mouse_position:
+		print("Try place:")
+		print("  Mouse world:", current_mouse_world_position)
+		print("  Cell:", current_cell)
+		print("  Can place:", current_can_place)
 
 	if not current_can_place:
 		print("Cannot place building here:", current_cell)
 		return
 
 	var success: bool = building_manager.try_place_building(
-		current_building_scene,
+		current_config,
 		current_cell
 	)
 
 	if success:
-		print("Building placed at cell:", current_cell)
+		print("Building placed:", current_config.display_name, " at cell:", current_cell)
 
-		# 当前是连续放置模式：
-		# 左键可以一直放多个建筑。
-		# 如果你希望放一个后自动退出放置模式，取消下面这一行注释：
-		# cancel_placing()
+
+func _should_block_world_input_by_ui() -> bool:
+	var hovered_control := get_viewport().gui_get_hovered_control()
+
+	if hovered_control == null:
+		return false
+
+	var current: Control = hovered_control
+
+	while current != null:
+		if current is Button:
+			return true
+
+		if current.name == "BuildPanel":
+			return true
+
+		var parent := current.get_parent()
+		current = parent as Control
+
+	return false

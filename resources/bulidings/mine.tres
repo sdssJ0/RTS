@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BuildingConfig" load_steps=3 format=3 uid="uid://c3jmmitvrx5gm"]
+
+[ext_resource type="Script" uid="uid://dhxl3oxjay0he" path="res://scripts/resources/BuildingConfig.gd" id="1_nx3y2"]
+[ext_resource type="Texture2D" uid="uid://dcpjvoub2xcxd" path="res://assets/Tiles/tile_0065.png" id="2_1dmh6"]
+
+[resource]
+script = ExtResource("1_nx3y2")
+id = &"mine"
+display_name = "矿场"
+texture = ExtResource("2_1dmh6")
+metadata/_custom_type_script = "uid://dhxl3oxjay0he"

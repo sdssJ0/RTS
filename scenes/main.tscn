@@ -1,28 +1,35 @@
-[gd_scene load_steps=7 format=3 uid="uid://b42jaxf0lblvy"]
+[gd_scene load_steps=12 format=3 uid="uid://b42jaxf0lblvy"]
 
 [ext_resource type="Script" uid="uid://bffp5dd2og0qh" path="res://scripts/grid_system.gd" id="1_o5qli"]
+[ext_resource type="Script" uid="uid://b6kdo4g2jy5um" path="res://scenes/building_catalog.gd" id="1_o6xl0"]
 [ext_resource type="Script" uid="uid://c5dysrn716nbf" path="res://scripts/building_manager.gd" id="2_0wfyh"]
+[ext_resource type="Script" uid="uid://dhxl3oxjay0he" path="res://scripts/resources/BuildingConfig.gd" id="2_ya4ey"]
+[ext_resource type="Resource" uid="uid://bi05rerppxpju" path="res://resources/bulidings/farm.tres" id="3_eb6dy"]
 [ext_resource type="Script" uid="uid://dwn0wu4twkijg" path="res://scripts/placement.gd" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://drgebyrwfarb" path="res://scripts/grid_visual.gd" id="4_jyhfs"]
+[ext_resource type="Resource" uid="uid://dbyq7agqxhwey" path="res://resources/bulidings/house.tres" id="4_trceg"]
+[ext_resource type="Resource" uid="uid://c3jmmitvrx5gm" path="res://resources/bulidings/mine.tres" id="5_a8y0u"]
 [ext_resource type="Script" uid="uid://dy7qvnjhbxrig" path="res://scripts/hud.gd" id="5_tbgi4"]
-[ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/basic_building.tscn" id="6_tefeu"]
+[ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="6_tefeu"]
 
 [node name="Main" type="Node2D"]
 
 [node name="Systems" type="Node" parent="."]
 
-[node name="GameState" type="Node" parent="Systems"]
+[node name="BuildingCatalog" type="Node" parent="Systems"]
+script = ExtResource("1_o6xl0")
+building_configs = Array[ExtResource("2_ya4ey")]([ExtResource("3_eb6dy"), ExtResource("4_trceg"), ExtResource("5_a8y0u")])
 
 [node name="GridSystem" type="Node" parent="Systems"]
 script = ExtResource("1_o5qli")
 
 [node name="BuildingManager" type="Node" parent="Systems"]
 script = ExtResource("2_0wfyh")
+building_scene = ExtResource("6_tefeu")
 
 [node name="PlacementSystem" type="Node" parent="Systems"]
 script = ExtResource("3_sugp2")
-preview_root_path = NodePath("../../World2D/PreviewRoot")
-camera_path = NodePath("../../World2D/Camera2D")
+preview_building_scene = ExtResource("6_tefeu")
 
 [node name="World2D" type="Node2D" parent="."]
 
@@ -48,12 +55,10 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("5_tbgi4")
+placement_system_path = null
 basic_building_scene = ExtResource("6_tefeu")
 
 [node name="BuildPanel" type="VBoxContainer" parent="UI/HUD"]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-
-[node name="BuildBasicButton" type="Button" parent="UI/HUD/BuildPanel"]
-layout_mode = 2

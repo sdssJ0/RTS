@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BuildingConfig" load_steps=3 format=3 uid="uid://dbyq7agqxhwey"]
+
+[ext_resource type="Script" uid="uid://dhxl3oxjay0he" path="res://scripts/resources/BuildingConfig.gd" id="1_vk4go"]
+[ext_resource type="Texture2D" uid="uid://xahujr0e6ujk" path="res://assets/Tiles/tile_0063.png" id="2_f7he5"]
+
+[resource]
+script = ExtResource("1_vk4go")
+display_name = "房屋"
+texture = ExtResource("2_f7he5")
+metadata/_custom_type_script = "uid://dhxl3oxjay0he"
