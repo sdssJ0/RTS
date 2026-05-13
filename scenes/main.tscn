@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://b42jaxf0lblvy"]
+[gd_scene load_steps=13 format=3 uid="uid://b42jaxf0lblvy"]
 
 [ext_resource type="Script" uid="uid://bffp5dd2og0qh" path="res://scripts/grid_system.gd" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://b6kdo4g2jy5um" path="res://scenes/building_catalog.gd" id="1_o6xl0"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" uid="uid://c3jmmitvrx5gm" path="res://resources/bulidings/mine.tres" id="5_a8y0u"]
 [ext_resource type="Script" uid="uid://dy7qvnjhbxrig" path="res://scripts/hud.gd" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="6_tefeu"]
+[ext_resource type="Script" uid="uid://dhd6o5s8xy4ud" path="res://scripts/money_system.gd" id="10_eb6dy"]
 
 [node name="Main" type="Node2D"]
 
@@ -30,6 +31,9 @@ building_scene = ExtResource("6_tefeu")
 [node name="PlacementSystem" type="Node" parent="Systems"]
 script = ExtResource("3_sugp2")
 preview_building_scene = ExtResource("6_tefeu")
+
+[node name="EconomySystem" type="Node" parent="Systems"]
+script = ExtResource("10_eb6dy")
 
 [node name="World2D" type="Node2D" parent="."]
 
@@ -55,8 +59,6 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("5_tbgi4")
-placement_system_path = null
-basic_building_scene = ExtResource("6_tefeu")
 
 [node name="BuildPanel" type="VBoxContainer" parent="UI/HUD"]
 layout_mode = 0

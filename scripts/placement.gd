@@ -3,13 +3,15 @@ extends Node
 
 @export var grid_system_path: NodePath = "../GridSystem"
 @export var building_manager_path: NodePath = "../BuildingManager"
+@export var economy_system_path: NodePath = "../EconomySystem"
 @export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
 
 @export var preview_building_scene: PackedScene
-@export var debug_mouse_position: bool = true
+@export var debug_mouse_position: bool = false
 
 @onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
+@onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
 
 var is_placing: bool = false
@@ -18,6 +20,8 @@ var current_config: BuildingConfig = null
 var preview_instance: BasicBuilding = null
 
 var current_cell: Vector2i = Vector2i.ZERO
+var current_grid_can_place: bool = false
+var current_can_afford: bool = false
 var current_can_place: bool = false
 var current_mouse_world_position: Vector2 = Vector2.ZERO
 
@@ -31,23 +35,18 @@ func _ready() -> void:
 
 	if grid_system == null:
 		push_error("PlacementSystem: GridSystem not found. Path = " + str(grid_system_path))
-	else:
-		print("PlacementSystem: GridSystem found:", grid_system.name)
 
 	if building_manager == null:
 		push_error("PlacementSystem: BuildingManager not found. Path = " + str(building_manager_path))
-	else:
-		print("PlacementSystem: BuildingManager found:", building_manager.name)
+
+	if economy_system == null:
+		push_error("PlacementSystem: EconomySystem not found. Path = " + str(economy_system_path))
 
 	if preview_root == null:
 		push_error("PlacementSystem: PreviewRoot not found. Path = " + str(preview_root_path))
-	else:
-		print("PlacementSystem: PreviewRoot found:", preview_root.name)
 
 	if preview_building_scene == null:
 		push_warning("PlacementSystem: Preview Building Scene is not assigned.")
-	else:
-		print("PlacementSystem: Preview Building Scene assigned.")
 
 
 func _process(_delta: float) -> void:
@@ -71,24 +70,11 @@ func _input(event: InputEvent) -> void:
 		if not mouse_event.pressed:
 			return
 
-		if debug_mouse_position:
-			print("PlacementSystem: mouse button event.")
-			print("  Button index:", mouse_event.button_index)
-			print("  Screen position:", mouse_event.position)
-
 		if _should_block_world_input_by_ui():
-			if debug_mouse_position:
-				var hovered_control := get_viewport().gui_get_hovered_control()
-				if hovered_control != null:
-					print("PlacementSystem: click blocked by UI:", hovered_control.name)
-				else:
-					print("PlacementSystem: click blocked by UI.")
 			return
 
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
 			if ignore_place_until_next_frame:
-				if debug_mouse_position:
-					print("PlacementSystem: ignored first click after selecting building.")
 				get_viewport().set_input_as_handled()
 				return
 
@@ -99,6 +85,8 @@ func _input(event: InputEvent) -> void:
 				print("Click screen:", mouse_event.position)
 				print("Mouse world:", current_mouse_world_position)
 				print("Current cell:", current_cell)
+				print("Grid can place:", current_grid_can_place)
+				print("Can afford:", current_can_afford)
 				print("Can place:", current_can_place)
 
 			_try_place_current_building()
@@ -131,6 +119,10 @@ func start_placing(config: BuildingConfig) -> void:
 		push_error("PlacementSystem: building_manager is null.")
 		return
 
+	if economy_system == null:
+		push_error("PlacementSystem: economy_system is null.")
+		return
+
 	if preview_root == null:
 		push_error("PlacementSystem: preview_root is null.")
 		return
@@ -155,6 +147,8 @@ func cancel_placing() -> void:
 	is_placing = false
 	current_config = null
 	current_cell = Vector2i.ZERO
+	current_grid_can_place = false
+	current_can_afford = false
 	current_can_place = false
 	current_mouse_world_position = Vector2.ZERO
 	ignore_place_until_next_frame = false
@@ -180,9 +174,12 @@ func _create_preview() -> void:
 		instance.queue_free()
 		return
 
+	preview_instance.set_preview_mode(true)
+
 	preview_root.add_child(preview_instance)
 
 	preview_instance.setup(current_config, Vector2i.ZERO)
+	preview_instance.z_as_relative = false
 	preview_instance.z_index = 10000
 	preview_instance.visible = true
 	preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.65)
@@ -205,10 +202,17 @@ func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
 	current_mouse_world_position = _screen_to_world_position(screen_position)
 	current_cell = grid_system.world_to_cell(current_mouse_world_position)
 
-	current_can_place = grid_system.can_place_area(
+	current_grid_can_place = grid_system.can_place_area(
 		current_cell,
 		current_config.size_in_cells
 	)
+
+	if economy_system != null:
+		current_can_afford = economy_system.can_afford_config(current_config)
+	else:
+		current_can_afford = false
+
+	current_can_place = current_grid_can_place and current_can_afford
 
 
 func _update_preview_visual() -> void:
@@ -233,20 +237,29 @@ func _update_preview_visual() -> void:
 
 func _try_place_current_building() -> void:
 	if current_config == null:
+		print("PlacementSystem: current_config is null.")
 		return
 
 	if building_manager == null:
-		push_error("PlacementSystem: building_manager is null.")
+		print("PlacementSystem: building_manager is null.")
 		return
 
 	if debug_mouse_position:
 		print("Try place:")
 		print("  Mouse world:", current_mouse_world_position)
 		print("  Cell:", current_cell)
+		print("  Grid can place:", current_grid_can_place)
+		print("  Can afford:", current_can_afford)
 		print("  Can place:", current_can_place)
 
-	if not current_can_place:
-		print("Cannot place building here:", current_cell)
+	if not current_grid_can_place:
+		print("Cannot place building here. Grid blocked:", current_cell)
+		return
+
+	if not current_can_afford:
+		print("Cannot place building. Not enough resource.")
+		print("  Cost Resource:", current_config.cost_resource_id)
+		print("  Cost:", current_config.cost)
 		return
 
 	var success: bool = building_manager.try_place_building(
@@ -254,8 +267,12 @@ func _try_place_current_building() -> void:
 		current_cell
 	)
 
+	print("PlacementSystem: BuildingManager result =", success)
+
 	if success:
 		print("Building placed:", current_config.display_name, " at cell:", current_cell)
+	else:
+		print("Building place failed.")
 
 
 func _should_block_world_input_by_ui() -> bool:

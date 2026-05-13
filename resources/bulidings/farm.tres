@@ -8,4 +8,7 @@ script = ExtResource("1_fw4mb")
 id = &"farm"
 display_name = "农场"
 texture = ExtResource("2_btt1d")
+cost = 10
+production_resource_id = &"food"
+production_amount = 5
 metadata/_custom_type_script = "uid://dhxl3oxjay0he"

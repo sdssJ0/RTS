@@ -7,4 +7,5 @@
 script = ExtResource("1_vk4go")
 display_name = "房屋"
 texture = ExtResource("2_f7he5")
+cost = 15
 metadata/_custom_type_script = "uid://dhxl3oxjay0he"
