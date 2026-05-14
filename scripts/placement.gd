@@ -4,6 +4,7 @@ extends Node
 @export var grid_system_path: NodePath = "../GridSystem"
 @export var building_manager_path: NodePath = "../BuildingManager"
 @export var economy_system_path: NodePath = "../EconomySystem"
+@export var territory_system_path: NodePath = "../TerritorySystem"
 @export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
 
 @export var preview_building_scene: PackedScene
@@ -12,6 +13,7 @@ extends Node
 @onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
 @onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
+@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
 
 var is_placing: bool = false
@@ -22,6 +24,7 @@ var preview_instance: BasicBuilding = null
 var current_cell: Vector2i = Vector2i.ZERO
 var current_grid_can_place: bool = false
 var current_can_afford: bool = false
+var current_is_own_territory: bool = false
 var current_can_place: bool = false
 var current_mouse_world_position: Vector2 = Vector2.ZERO
 
@@ -41,6 +44,9 @@ func _ready() -> void:
 
 	if economy_system == null:
 		push_error("PlacementSystem: EconomySystem not found. Path = " + str(economy_system_path))
+
+	if territory_system == null:
+		push_error("PlacementSystem: TerritorySystem not found. Path = " + str(territory_system_path))
 
 	if preview_root == null:
 		push_error("PlacementSystem: PreviewRoot not found. Path = " + str(preview_root_path))
@@ -87,6 +93,7 @@ func _input(event: InputEvent) -> void:
 				print("Current cell:", current_cell)
 				print("Grid can place:", current_grid_can_place)
 				print("Can afford:", current_can_afford)
+				print("Own territory:", current_is_own_territory)
 				print("Can place:", current_can_place)
 
 			_try_place_current_building()
@@ -123,6 +130,10 @@ func start_placing(config: BuildingConfig) -> void:
 		push_error("PlacementSystem: economy_system is null.")
 		return
 
+	if territory_system == null:
+		push_error("PlacementSystem: territory_system is null.")
+		return
+
 	if preview_root == null:
 		push_error("PlacementSystem: preview_root is null.")
 		return
@@ -149,6 +160,7 @@ func cancel_placing() -> void:
 	current_cell = Vector2i.ZERO
 	current_grid_can_place = false
 	current_can_afford = false
+	current_is_own_territory = false
 	current_can_place = false
 	current_mouse_world_position = Vector2.ZERO
 	ignore_place_until_next_frame = false
@@ -212,7 +224,15 @@ func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
 	else:
 		current_can_afford = false
 
-	current_can_place = current_grid_can_place and current_can_afford
+	if territory_system != null:
+		current_is_own_territory = territory_system.is_area_owned(
+			current_cell,
+			current_config.size_in_cells
+		)
+	else:
+		current_is_own_territory = false
+
+	current_can_place = current_grid_can_place and current_can_afford and current_is_own_territory
 
 
 func _update_preview_visual() -> void:
@@ -250,10 +270,15 @@ func _try_place_current_building() -> void:
 		print("  Cell:", current_cell)
 		print("  Grid can place:", current_grid_can_place)
 		print("  Can afford:", current_can_afford)
+		print("  Own territory:", current_is_own_territory)
 		print("  Can place:", current_can_place)
 
 	if not current_grid_can_place:
 		print("Cannot place building here. Grid blocked:", current_cell)
+		return
+
+	if not current_is_own_territory:
+		print("Cannot place building. Not your territory:", current_cell)
 		return
 
 	if not current_can_afford:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://b42jaxf0lblvy"]
+[gd_scene load_steps=16 format=3 uid="uid://b42jaxf0lblvy"]
 
 [ext_resource type="Script" uid="uid://bffp5dd2og0qh" path="res://scripts/grid_system.gd" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://b6kdo4g2jy5um" path="res://scenes/building_catalog.gd" id="1_o6xl0"]
@@ -12,6 +12,9 @@
 [ext_resource type="Script" uid="uid://dy7qvnjhbxrig" path="res://scripts/hud.gd" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="6_tefeu"]
 [ext_resource type="Script" uid="uid://dhd6o5s8xy4ud" path="res://scripts/money_system.gd" id="10_eb6dy"]
+[ext_resource type="Script" uid="uid://dkgai8e3itq62" path="res://scripts/territory_system.gd" id="11_a8y0u"]
+[ext_resource type="Script" uid="uid://c1ptm7g6t2ra3" path="res://scripts/territory_visual.gd" id="13_jkv2x"]
+[ext_resource type="Script" uid="uid://di5yb1ks3n8uy" path="res://scripts/camera_2d.gd" id="14_jkv2x"]
 
 [node name="Main" type="Node2D"]
 
@@ -35,21 +38,30 @@ preview_building_scene = ExtResource("6_tefeu")
 [node name="EconomySystem" type="Node" parent="Systems"]
 script = ExtResource("10_eb6dy")
 
+[node name="TerritorySystem" type="Node" parent="Systems"]
+script = ExtResource("11_a8y0u")
+country_color = Color(1, 0.30606714, 0.34195584, 1)
+
 [node name="World2D" type="Node2D" parent="."]
 
 [node name="BackgroundRoot" type="Node2D" parent="World2D"]
 
 [node name="UnitRoot" type="Node2D" parent="World2D"]
 
-[node name="BuildingRoot" type="Node2D" parent="World2D"]
-
 [node name="GridVisual" type="Node2D" parent="World2D"]
 script = ExtResource("4_jyhfs")
+
+[node name="TerritoryVisual" type="Node2D" parent="World2D"]
+script = ExtResource("13_jkv2x")
+border_width = 2.0
+
+[node name="BuildingRoot" type="Node2D" parent="World2D"]
 
 [node name="PreviewRoot" type="Node2D" parent="World2D"]
 
 [node name="Camera2D" type="Camera2D" parent="World2D"]
-position = Vector2(576, 324)
+position = Vector2(800, 480)
+script = ExtResource("14_jkv2x")
 
 [node name="UI" type="CanvasLayer" parent="."]
 

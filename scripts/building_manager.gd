@@ -5,12 +5,14 @@ signal building_placed(building: BasicBuilding, config: BuildingConfig, cell: Ve
 
 @export var grid_system_path: NodePath = "../GridSystem"
 @export var economy_system_path: NodePath = "../EconomySystem"
+@export var territory_system_path: NodePath = "../TerritorySystem"
 @export var building_root_path: NodePath = "../../World2D/BuildingRoot"
 
 @export var building_scene: PackedScene
 
 @onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
+@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var building_root: Node2D = get_node_or_null(building_root_path) as Node2D
 
 
@@ -26,6 +28,11 @@ func _ready() -> void:
 		push_error("BuildingManager: EconomySystem not found. Path = " + str(economy_system_path))
 	else:
 		print("BuildingManager: EconomySystem found:", economy_system.name)
+
+	if territory_system == null:
+		push_error("BuildingManager: TerritorySystem not found. Path = " + str(territory_system_path))
+	else:
+		print("BuildingManager: TerritorySystem found:", territory_system.name)
 
 	if building_root == null:
 		push_error("BuildingManager: BuildingRoot not found. Path = " + str(building_root_path))
@@ -55,6 +62,10 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		print("BuildingManager: economy_system is null.")
 		return false
 
+	if territory_system == null:
+		print("BuildingManager: territory_system is null.")
+		return false
+
 	if building_root == null:
 		print("BuildingManager: building_root is null.")
 		return false
@@ -65,6 +76,12 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 
 	if not grid_system.can_place_area(cell, config.size_in_cells):
 		print("BuildingManager: cannot place. Area occupied or invalid.")
+		print("  Cell:", cell)
+		print("  Size:", config.size_in_cells)
+		return false
+
+	if not territory_system.is_area_owned(cell, config.size_in_cells):
+		print("BuildingManager: cannot place. Not owned territory.")
 		print("  Cell:", cell)
 		print("  Size:", config.size_in_cells)
 		return false
