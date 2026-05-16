@@ -5,6 +5,7 @@ extends Node
 @export var building_manager_path: NodePath = "../BuildingManager"
 @export var economy_system_path: NodePath = "../EconomySystem"
 @export var territory_system_path: NodePath = "../TerritorySystem"
+@export var hud_path: NodePath = "../../UI/HUD"
 @export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
 
 @export var preview_building_scene: PackedScene
@@ -14,6 +15,7 @@ extends Node
 @onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
 @onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
+@onready var hud: HUD = get_node_or_null(hud_path) as HUD
 @onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
 
 var is_placing: bool = false
@@ -48,6 +50,9 @@ func _ready() -> void:
 	if territory_system == null:
 		push_error("PlacementSystem: TerritorySystem not found. Path = " + str(territory_system_path))
 
+	if hud == null:
+		push_warning("PlacementSystem: HUD not found. Path = " + str(hud_path))
+
 	if preview_root == null:
 		push_error("PlacementSystem: PreviewRoot not found. Path = " + str(preview_root_path))
 
@@ -59,11 +64,14 @@ func _process(_delta: float) -> void:
 	if not is_placing:
 		return
 
-	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
-	_update_preview_visual()
-
 	if ignore_place_until_next_frame:
 		ignore_place_until_next_frame = false
+
+	if _should_block_world_input_by_ui():
+		return
+
+	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
+	_update_preview_visual()
 
 
 func _input(event: InputEvent) -> void:
@@ -71,7 +79,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 
 		if not mouse_event.pressed:
 			return
@@ -88,13 +96,7 @@ func _input(event: InputEvent) -> void:
 			_update_preview_visual()
 
 			if debug_mouse_position:
-				print("Click screen:", mouse_event.position)
-				print("Mouse world:", current_mouse_world_position)
-				print("Current cell:", current_cell)
-				print("Grid can place:", current_grid_can_place)
-				print("Can afford:", current_can_afford)
-				print("Own territory:", current_is_own_territory)
-				print("Can place:", current_can_place)
+				_print_place_debug()
 
 			_try_place_current_building()
 			get_viewport().set_input_as_handled()
@@ -104,7 +106,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 	elif event is InputEventKey:
-		var key_event := event as InputEventKey
+		var key_event: InputEventKey = event as InputEventKey
 
 		if key_event.pressed and key_event.keycode == KEY_ESCAPE:
 			cancel_placing()
@@ -151,7 +153,7 @@ func start_placing(config: BuildingConfig) -> void:
 	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
 	_update_preview_visual()
 
-	print("Start placing:", config.display_name)
+	print("Start placing:", config.display_name, " faction:", territory_system.get_active_faction_id())
 
 
 func cancel_placing() -> void:
@@ -178,7 +180,7 @@ func _create_preview() -> void:
 		push_error("PlacementSystem: preview_building_scene is not assigned.")
 		return
 
-	var instance := preview_building_scene.instantiate()
+	var instance: Node = preview_building_scene.instantiate()
 	preview_instance = instance as BasicBuilding
 
 	if preview_instance == null:
@@ -186,15 +188,29 @@ func _create_preview() -> void:
 		instance.queue_free()
 		return
 
-	preview_instance.set_preview_mode(true)
-
 	preview_root.add_child(preview_instance)
 
+	preview_instance.set_preview_mode(true)
 	preview_instance.setup(current_config, Vector2i.ZERO)
+
+	if territory_system != null:
+		var active_faction_id: StringName = territory_system.get_active_faction_id()
+		var preview_texture: Texture2D = territory_system.get_building_texture_for_faction(
+			active_faction_id,
+			current_config
+		)
+
+		print("Preview faction =", active_faction_id)
+		print("Preview building =", current_config.display_name)
+		print("Preview texture =", preview_texture)
+
+		preview_instance.owner_faction_id = active_faction_id
+		preview_instance.owner_texture = preview_texture
+		preview_instance.apply_owner_visual()
+
 	preview_instance.z_as_relative = false
 	preview_instance.z_index = 10000
 	preview_instance.visible = true
-	preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.65)
 
 	print("PlacementSystem: preview created.")
 
@@ -246,13 +262,9 @@ func _update_preview_visual() -> void:
 		return
 
 	var snapped_position: Vector2 = grid_system.cell_to_world(current_cell)
-
 	preview_instance.global_position = snapped_position
 
-	if current_can_place:
-		preview_instance.modulate = Color(0.2, 1.0, 0.2, 0.65)
-	else:
-		preview_instance.modulate = Color(1.0, 0.2, 0.2, 0.65)
+	preview_instance.set_preview_valid(current_can_place)
 
 
 func _try_place_current_building() -> void:
@@ -265,20 +277,17 @@ func _try_place_current_building() -> void:
 		return
 
 	if debug_mouse_position:
-		print("Try place:")
-		print("  Mouse world:", current_mouse_world_position)
-		print("  Cell:", current_cell)
-		print("  Grid can place:", current_grid_can_place)
-		print("  Can afford:", current_can_afford)
-		print("  Own territory:", current_is_own_territory)
-		print("  Can place:", current_can_place)
+		_print_place_debug()
 
 	if not current_grid_can_place:
 		print("Cannot place building here. Grid blocked:", current_cell)
 		return
 
 	if not current_is_own_territory:
-		print("Cannot place building. Not your territory:", current_cell)
+		print("Cannot place building. Not current faction territory:", current_cell)
+		if territory_system != null:
+			print("  Active faction:", territory_system.get_active_faction_id())
+			print("  Cell owner:", territory_system.get_cell_owner(current_cell))
 		return
 
 	if not current_can_afford:
@@ -300,22 +309,20 @@ func _try_place_current_building() -> void:
 		print("Building place failed.")
 
 
-func _should_block_world_input_by_ui() -> bool:
-	var hovered_control := get_viewport().gui_get_hovered_control()
+func _print_place_debug() -> void:
+	print("PlacementSystem debug:")
+	print("  Active faction:", territory_system.get_active_faction_id() if territory_system != null else &"")
+	print("  Mouse world:", current_mouse_world_position)
+	print("  Cell:", current_cell)
+	print("  Cell owner:", territory_system.get_cell_owner(current_cell) if territory_system != null else &"")
+	print("  Grid can place:", current_grid_can_place)
+	print("  Can afford:", current_can_afford)
+	print("  Own territory:", current_is_own_territory)
+	print("  Can place:", current_can_place)
 
-	if hovered_control == null:
+
+func _should_block_world_input_by_ui() -> bool:
+	if hud == null:
 		return false
 
-	var current: Control = hovered_control
-
-	while current != null:
-		if current is Button:
-			return true
-
-		if current.name == "BuildPanel":
-			return true
-
-		var parent := current.get_parent()
-		current = parent as Control
-
-	return false
+	return hud.is_blocking_world_input()

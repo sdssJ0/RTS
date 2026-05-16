@@ -8,8 +8,6 @@ signal building_placed(building: BasicBuilding, config: BuildingConfig, cell: Ve
 @export var territory_system_path: NodePath = "../TerritorySystem"
 @export var building_root_path: NodePath = "../../World2D/BuildingRoot"
 
-@export var building_scene: PackedScene
-
 @onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
@@ -17,117 +15,180 @@ signal building_placed(building: BasicBuilding, config: BuildingConfig, cell: Ve
 
 
 func _ready() -> void:
-	print("BuildingManager ready.")
-
 	if grid_system == null:
 		push_error("BuildingManager: GridSystem not found. Path = " + str(grid_system_path))
-	else:
-		print("BuildingManager: GridSystem found:", grid_system.name)
 
 	if economy_system == null:
 		push_error("BuildingManager: EconomySystem not found. Path = " + str(economy_system_path))
-	else:
-		print("BuildingManager: EconomySystem found:", economy_system.name)
 
 	if territory_system == null:
 		push_error("BuildingManager: TerritorySystem not found. Path = " + str(territory_system_path))
-	else:
-		print("BuildingManager: TerritorySystem found:", territory_system.name)
 
 	if building_root == null:
 		push_error("BuildingManager: BuildingRoot not found. Path = " + str(building_root_path))
-	else:
-		print("BuildingManager: BuildingRoot found:", building_root.name)
 
-	if building_scene == null:
-		push_warning("BuildingManager: Building Scene is not assigned.")
-	else:
-		print("BuildingManager: Building Scene assigned.")
+	print("BuildingManager ready.")
 
 
 func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
-	print("BuildingManager: try_place_building called.")
-	print("  Config:", config.display_name if config != null else "null")
-	print("  Cell:", cell)
+	print("")
+	print("========== BuildingManager.try_place_building ==========")
 
 	if config == null:
-		print("BuildingManager: config is null.")
+		push_error("BuildingManager: config is null.")
+		print("========================================================")
 		return false
 
+	print("BuildingManager: config =", config.display_name)
+	print("BuildingManager: target cell =", cell)
+
 	if grid_system == null:
-		print("BuildingManager: grid_system is null.")
+		push_error("BuildingManager: grid_system is null.")
+		print("========================================================")
 		return false
 
 	if economy_system == null:
-		print("BuildingManager: economy_system is null.")
+		push_error("BuildingManager: economy_system is null.")
+		print("========================================================")
 		return false
 
 	if territory_system == null:
-		print("BuildingManager: territory_system is null.")
+		push_error("BuildingManager: territory_system is null.")
+		print("========================================================")
 		return false
 
 	if building_root == null:
-		print("BuildingManager: building_root is null.")
+		push_error("BuildingManager: building_root is null.")
+		print("========================================================")
 		return false
+
+	var building_scene: PackedScene = _get_building_scene_from_config(config)
 
 	if building_scene == null:
-		print("BuildingManager: building_scene is not assigned.")
+		push_error("BuildingManager: building scene is null for config: " + str(config.display_name))
+		print("BuildingManager: 请检查 BuildingConfig.tres 里是否配置了 scene 或 building_scene。")
+		print("========================================================")
 		return false
 
-	if not grid_system.can_place_area(cell, config.size_in_cells):
-		print("BuildingManager: cannot place. Area occupied or invalid.")
-		print("  Cell:", cell)
-		print("  Size:", config.size_in_cells)
+	var size_in_cells: Vector2i = config.size_in_cells
+	var active_faction_id: StringName = territory_system.get_active_faction_id()
+
+	var grid_can_place: bool = grid_system.can_place_area(cell, size_in_cells)
+	var area_owned: bool = territory_system.is_area_owned_by_faction(
+		cell,
+		size_in_cells,
+		active_faction_id
+	)
+	var can_afford: bool = economy_system.can_afford_config(config)
+
+	print("BuildingManager place check:")
+	print("  active_faction_id =", active_faction_id)
+	print("  cell =", cell)
+	print("  size =", size_in_cells)
+	print("  cell owner =", territory_system.get_cell_owner(cell))
+	print("  grid can place =", grid_can_place)
+	print("  area owned by faction =", area_owned)
+	print("  can afford =", can_afford)
+	print("  cost resource =", config.cost_resource_id)
+	print("  cost =", config.cost)
+
+	if active_faction_id == &"":
+		push_warning("BuildingManager: active faction is empty.")
+		print("========================================================")
 		return false
 
-	if not territory_system.is_area_owned(cell, config.size_in_cells):
-		print("BuildingManager: cannot place. Not owned territory.")
-		print("  Cell:", cell)
-		print("  Size:", config.size_in_cells)
+	if not grid_can_place:
+		print("BuildingManager: cannot place. Grid area occupied or invalid.")
+		print("  Failed cell =", cell)
+		print("========================================================")
 		return false
 
-	if not economy_system.can_afford_config(config):
-		print("BuildingManager: cannot place. Not enough resource.")
-		print("  Cost Resource:", config.cost_resource_id)
-		print("  Cost:", config.cost)
-		print("  Have:", economy_system.get_resource_amount(config.cost_resource_id))
+	if not area_owned:
+		print("BuildingManager: cannot place. Area not owned by active faction.")
+		print("  Active faction =", active_faction_id)
+		print("  Cell owner =", territory_system.get_cell_owner(cell))
+		print("========================================================")
 		return false
 
-	var instance := building_scene.instantiate()
-	var building := instance as BasicBuilding
-
-	if building == null:
-		print("BuildingManager: building_scene root must be BasicBuilding.")
-		instance.queue_free()
+	if not can_afford:
+		print("BuildingManager: cannot place. Not enough resources.")
+		print("  Cost Resource =", config.cost_resource_id)
+		print("  Cost =", config.cost)
+		print("========================================================")
 		return false
 
 	if not economy_system.try_spend_config(config):
-		print("BuildingManager: spend failed.")
-		instance.queue_free()
+		print("BuildingManager: cannot place. Spend failed.")
+		print("========================================================")
 		return false
 
-	building.set_preview_mode(false)
-	building.set_economy_system(economy_system)
+	var instance: Node = building_scene.instantiate()
+
+	if instance == null:
+		push_error("BuildingManager: instantiate returned null.")
+		print("========================================================")
+		return false
+
+	var building: BasicBuilding = instance as BasicBuilding
+
+	if building == null:
+		push_error("BuildingManager: building scene root is not BasicBuilding.")
+		print("BuildingManager: instantiated root class =", instance.get_class())
+		print("BuildingManager: 请确认真实建筑场景的根节点挂载了 BasicBuilding.gd。")
+		instance.queue_free()
+		print("========================================================")
+		return false
+
+	building.config = config
+	building.grid_cell = cell
+	building.economy_system = economy_system
+	building.is_preview = false
+	building.owner_faction_id = active_faction_id
+	building.owner_texture = territory_system.get_building_texture_for_faction(
+		active_faction_id,
+		config
+	)
+
+	building.position = grid_system.cell_to_world(cell)
 
 	building_root.add_child(building)
 
-	var world_position: Vector2 = grid_system.cell_to_world(cell)
+	building.apply_config_visual()
+	building.apply_owner_visual()
 
-	building.global_position = world_position
-	building.visible = true
-	building.z_as_relative = false
-	building.z_index = 100
+	grid_system.occupy_area(cell, size_in_cells, building)
 
-	building.setup(config, cell)
-
-	grid_system.occupy_area(cell, config.size_in_cells, building)
-
-	print("BuildingManager: building added.")
-	print("  Parent:", building.get_parent().name)
-	print("  Global position:", building.global_position)
-	print("  Visible:", building.visible)
-	print("  Z index:", building.z_index)
+	print("BuildingManager: building placed successfully.")
+	print("  Building =", config.display_name)
+	print("  Cell =", cell)
+	print("  Faction =", active_faction_id)
+	print("========================================================")
 
 	emit_signal("building_placed", building, config, cell)
 
 	return true
+
+
+func _get_building_scene_from_config(config: BuildingConfig) -> PackedScene:
+	if config == null:
+		print("BuildingManager: config is null when getting scene.")
+		return null
+
+	print("BuildingManager: checking building scene for config:", config.display_name)
+
+	var scene_value: Variant = config.get("scene")
+
+	if scene_value is PackedScene:
+		print("BuildingManager: found scene field.")
+		return scene_value as PackedScene
+
+	scene_value = config.get("building_scene")
+
+	if scene_value is PackedScene:
+		print("BuildingManager: found building_scene field.")
+		return scene_value as PackedScene
+
+	print("BuildingManager: no scene or building_scene found in config:", config.display_name)
+	print("BuildingManager: config resource path =", config.resource_path)
+
+	return null

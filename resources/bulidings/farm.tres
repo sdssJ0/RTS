@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="BuildingConfig" load_steps=3 format=3 uid="uid://bi05rerppxpju"]
+[gd_resource type="Resource" script_class="BuildingConfig" load_steps=4 format=3 uid="uid://bi05rerppxpju"]
 
 [ext_resource type="Script" uid="uid://dhxl3oxjay0he" path="res://scripts/resources/BuildingConfig.gd" id="1_fw4mb"]
+[ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="1_xmea0"]
 [ext_resource type="Texture2D" uid="uid://dyyb2fb5krkic" path="res://assets/Tiles/tile_0066.png" id="2_btt1d"]
 
 [resource]
@@ -8,6 +9,7 @@ script = ExtResource("1_fw4mb")
 id = &"farm"
 display_name = "农场"
 texture = ExtResource("2_btt1d")
+building_scene = ExtResource("1_xmea0")
 cost = 10
 production_resource_id = &"food"
 production_amount = 5

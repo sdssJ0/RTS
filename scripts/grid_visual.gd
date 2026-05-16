@@ -2,7 +2,7 @@ extends Node2D
 
 @export var cell_size: int = 16
 @export var columns: int = 100
-@export var rows: int = 80
+@export var rows: int = 100
 @export var line_color: Color = Color(1.0, 1.0, 1.0, 0.22)
 
 func _ready() -> void:

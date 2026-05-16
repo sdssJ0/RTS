@@ -6,6 +6,7 @@ extends Resource
 
 @export var texture: Texture2D
 @export var size_in_cells: Vector2i = Vector2i.ONE
+@export var building_scene: PackedScene = null
 
 @export_group("Cost")
 @export var cost_resource_id: StringName = &"gold"

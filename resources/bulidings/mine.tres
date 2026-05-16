@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="BuildingConfig" load_steps=3 format=3 uid="uid://c3jmmitvrx5gm"]
+[gd_resource type="Resource" script_class="BuildingConfig" load_steps=4 format=3 uid="uid://c3jmmitvrx5gm"]
 
 [ext_resource type="Script" uid="uid://dhxl3oxjay0he" path="res://scripts/resources/BuildingConfig.gd" id="1_nx3y2"]
+[ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="1_qqu0s"]
 [ext_resource type="Texture2D" uid="uid://dcpjvoub2xcxd" path="res://assets/Tiles/tile_0065.png" id="2_1dmh6"]
 
 [resource]
@@ -8,6 +9,7 @@ script = ExtResource("1_nx3y2")
 id = &"mine"
 display_name = "矿场"
 texture = ExtResource("2_1dmh6")
+building_scene = ExtResource("1_qqu0s")
 cost = 20
 production_resource_id = &"gold"
 production_amount = 5

@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="FactionConfig" load_steps=9 format=3 uid="uid://bojn0hps0dlxn"]
+
+[ext_resource type="Script" uid="uid://ckt01p2pexeqf" path="res://scripts/resources/FactionBuildingTexture.gd" id="1_1j1qn"]
+[ext_resource type="Texture2D" uid="uid://dyyb2fb5krkic" path="res://assets/Tiles/tile_0066.png" id="2_nc01p"]
+[ext_resource type="Script" uid="uid://ckyqcdfe6iyt3" path="res://scripts/resources/FactionConfig.gd" id="2_sm3hy"]
+[ext_resource type="Texture2D" uid="uid://dcpjvoub2xcxd" path="res://assets/Tiles/tile_0065.png" id="3_dj5q4"]
+[ext_resource type="Texture2D" uid="uid://clvrh6t8gr1xj" path="res://assets/Tiles/tile_0062.png" id="4_4wfc0"]
+
+[sub_resource type="Resource" id="Resource_pym1e"]
+script = ExtResource("1_1j1qn")
+building_id = &"farm"
+texture = ExtResource("2_nc01p")
+metadata/_custom_type_script = "uid://ckt01p2pexeqf"
+
+[sub_resource type="Resource" id="Resource_26omf"]
+script = ExtResource("1_1j1qn")
+building_id = &"mine"
+texture = ExtResource("3_dj5q4")
+metadata/_custom_type_script = "uid://ckt01p2pexeqf"
+
+[sub_resource type="Resource" id="Resource_ctf12"]
+script = ExtResource("1_1j1qn")
+building_id = &"house"
+texture = ExtResource("4_4wfc0")
+metadata/_custom_type_script = "uid://ckt01p2pexeqf"
+
+[resource]
+script = ExtResource("2_sm3hy")
+id = &"red"
+display_name = "红国"
+territory_color = Color(1, 0.31976005, 0.23827368, 1)
+preview_color = Color(1, 0, 0, 0.34901962)
+initial_origin = Vector2i(40, 25)
+building_textures = Array[ExtResource("1_1j1qn")]([SubResource("Resource_pym1e"), SubResource("Resource_26omf"), SubResource("Resource_ctf12")])
+metadata/_custom_type_script = "uid://ckyqcdfe6iyt3"

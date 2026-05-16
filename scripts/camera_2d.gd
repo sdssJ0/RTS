@@ -2,12 +2,12 @@ class_name GameCamera
 extends Camera2D
 
 @export_group("Grid Map Bounds")
-@export var grid_system_path: NodePath = "../GridSystem"
+@export var grid_system_path: NodePath = "../../Systems/GridSystem"
+@export var hud_path: NodePath = "../../UI/HUD"
 @export var use_map_bounds: bool = true
 
 @export var map_origin_cell: Vector2i = Vector2i.ZERO
 @export var map_size_in_cells: Vector2i = Vector2i(100, 100)
-
 @export var map_padding_pixels: float = 0.0
 
 @export_group("Keyboard Move")
@@ -16,12 +16,12 @@ extends Camera2D
 
 @export_group("Mouse Drag")
 @export var enable_middle_mouse_drag: bool = true
-@export var drag_button: MouseButton = MOUSE_BUTTON_RIGHT
+@export var drag_button: int = MOUSE_BUTTON_MIDDLE
 
 @export_group("Zoom")
 @export var enable_mouse_wheel_zoom: bool = true
 @export var zoom_step: float = 1.12
-@export var min_zoom: float = 1.0
+@export var min_zoom: float = 0.5
 @export var max_zoom: float = 3.0
 @export var zoom_to_mouse: bool = true
 
@@ -31,6 +31,7 @@ extends Camera2D
 @export var edge_scroll_speed: float = 500.0
 
 @onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
+@onready var hud: HUD = get_node_or_null(hud_path) as HUD
 
 var is_dragging: bool = false
 
@@ -50,6 +51,9 @@ func _ready() -> void:
 		push_warning("GameCamera: GridSystem not found. Path = " + str(grid_system_path))
 	else:
 		print("GameCamera: GridSystem found:", grid_system.name)
+
+	if hud == null:
+		push_warning("GameCamera: HUD not found. Path = " + str(hud_path))
 
 
 func _process(delta: float) -> void:
@@ -81,12 +85,20 @@ func _input(event: InputEvent) -> void:
 
 
 func _handle_mouse_button(mouse_event: InputEventMouseButton) -> void:
-	if _should_block_camera_input_by_ui():
-		return
-
 	if enable_middle_mouse_drag and mouse_event.button_index == drag_button:
-		is_dragging = mouse_event.pressed
-		get_viewport().set_input_as_handled()
+		if mouse_event.pressed:
+			if _should_block_camera_input_by_ui():
+				return
+
+			is_dragging = true
+			get_viewport().set_input_as_handled()
+			return
+		else:
+			is_dragging = false
+			get_viewport().set_input_as_handled()
+			return
+
+	if _should_block_camera_input_by_ui():
 		return
 
 	if not enable_mouse_wheel_zoom:
@@ -245,21 +257,7 @@ func _get_map_world_rect() -> Rect2:
 
 
 func _should_block_camera_input_by_ui() -> bool:
-	var hovered_control: Control = get_viewport().gui_get_hovered_control()
-
-	if hovered_control == null:
+	if hud == null:
 		return false
 
-	var current: Control = hovered_control
-
-	while current != null:
-		if current is Button:
-			return true
-
-		if current.name == "BuildPanel":
-			return true
-
-		var parent: Node = current.get_parent()
-		current = parent as Control
-
-	return false
+	return hud.is_blocking_world_input()
