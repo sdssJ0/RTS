@@ -15,6 +15,11 @@ extends Resource
 @export var initial_origin: Vector2i = Vector2i(20, 25)
 @export var initial_size: Vector2i = Vector2i(10, 10)
 
+@export_group("Starting Resources")
+@export var starting_gold: int = 200
+@export var starting_food: int = 0
+@export var starting_stone: int = 0
+
 @export_group("Building Textures")
 @export var building_textures: Array[FactionBuildingTexture] = []
 

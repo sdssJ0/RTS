@@ -214,7 +214,8 @@ func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
 		current_config.size_in_cells
 	)
 
-	current_can_afford = EconomySystem.can_afford_config(current_config)
+	var active_faction_id: StringName = territory_system.get_active_faction_id() if territory_system != null else &""
+	current_can_afford = EconomySystem.can_afford_config(active_faction_id, current_config)
 
 	if territory_system != null:
 		current_is_own_territory = territory_system.is_area_owned(

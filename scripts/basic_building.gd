@@ -37,6 +37,7 @@ func _process(delta: float) -> void:
 		production_timer -= config.production_interval
 
 		EconomySystem.add_resource(
+			owner_faction_id,
 			config.production_resource_id,
 			config.production_amount
 		)

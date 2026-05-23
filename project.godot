@@ -18,8 +18,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 GridSystem="*res://scripts/grid_system.gd"
-EconomySystem="*res://scripts/money_system.gd"
 FactionSystem="*res://scripts/faction_system.gd"
+EconomySystem="*res://scripts/money_system.gd"
 BuildingCatalog="*res://scripts/building_catalog.gd"
 
 [display]

@@ -18,7 +18,8 @@ signal ui_mouse_block_changed(is_blocking: bool)
 
 @onready var build_panel: VBoxContainer = get_node_or_null("BuildPanel") as VBoxContainer
 
-var resource_label: Label = null
+var resource_panel: VBoxContainer = null
+var faction_resource_labels: Dictionary = {}
 var faction_panel: HBoxContainer = null
 var is_mouse_over_ui: bool = false
 
@@ -41,12 +42,12 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
 	build_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	build_panel.position = Vector2(10, 100)
+	build_panel.position = Vector2(10, 120)
 	build_panel.custom_minimum_size = Vector2(200, 0)
 	build_panel.size = Vector2(200, 0)
 	build_panel.add_theme_constant_override("separation", 4)
 
-	_create_resource_label()
+	_create_resource_panel()
 	_create_faction_panel()
 
 	_connect_ui_mouse_block_signals()
@@ -56,7 +57,7 @@ func _ready() -> void:
 	territory_system.expansion_mode_changed.connect(_on_expansion_mode_changed)
 	FactionSystem.active_faction_changed.connect(_on_active_faction_changed)
 
-	_update_resource_label()
+	_update_resource_panel()
 	_rebuild_faction_buttons()
 	_rebuild_panel_buttons()
 
@@ -72,17 +73,42 @@ func is_blocking_world_input() -> bool:
 	return is_mouse_over_ui
 
 
-func _create_resource_label() -> void:
-	resource_label = get_node_or_null("ResourceLabel") as Label
+func _create_resource_panel() -> void:
+	resource_panel = get_node_or_null("ResourcePanel") as VBoxContainer
 
-	if resource_label == null:
-		resource_label = Label.new()
-		resource_label.name = "ResourceLabel"
-		add_child(resource_label)
+	if resource_panel == null:
+		resource_panel = VBoxContainer.new()
+		resource_panel.name = "ResourcePanel"
+		add_child(resource_panel)
 
-	resource_label.position = Vector2(10, 10)
-	resource_label.custom_minimum_size = Vector2(600, 30)
-	resource_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	resource_panel.position = Vector2(10, 10)
+	resource_panel.custom_minimum_size = Vector2(600, 0)
+	resource_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	resource_panel.add_theme_constant_override("separation", 2)
+
+	_rebuild_faction_resource_labels()
+
+
+func _rebuild_faction_resource_labels() -> void:
+	if resource_panel == null:
+		return
+
+	for child in resource_panel.get_children():
+		resource_panel.remove_child(child)
+		child.queue_free()
+
+	faction_resource_labels.clear()
+
+	for faction in FactionSystem.get_all_factions():
+		if faction == null:
+			continue
+
+		var label: Label = Label.new()
+		label.mouse_filter = Control.MOUSE_FILTER_STOP
+		label.add_theme_color_override("font_color", faction.ui_color)
+		resource_panel.add_child(label)
+
+		faction_resource_labels[faction.id] = label
 
 
 func _create_faction_panel() -> void:
@@ -93,7 +119,7 @@ func _create_faction_panel() -> void:
 		faction_panel.name = "FactionPanel"
 		add_child(faction_panel)
 
-	faction_panel.position = Vector2(10, 50)
+	faction_panel.position = Vector2(10, 70)
 	faction_panel.custom_minimum_size = Vector2(700, 40)
 	faction_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	faction_panel.add_theme_constant_override("separation", 6)
@@ -109,12 +135,12 @@ func _connect_ui_mouse_block_signals() -> void:
 			_update_mouse_over_ui_state()
 		)
 
-	if resource_label != null:
-		resource_label.mouse_entered.connect(func() -> void:
+	if resource_panel != null:
+		resource_panel.mouse_entered.connect(func() -> void:
 			_set_mouse_over_ui(true)
 		)
 
-		resource_label.mouse_exited.connect(func() -> void:
+		resource_panel.mouse_exited.connect(func() -> void:
 			_update_mouse_over_ui_state()
 		)
 
@@ -150,7 +176,7 @@ func _is_mouse_inside_blocking_ui() -> bool:
 	if _is_mouse_inside_control(build_panel, mouse_position):
 		return true
 
-	if _is_mouse_inside_control(resource_label, mouse_position):
+	if _is_mouse_inside_control(resource_panel, mouse_position):
 		return true
 
 	if _is_mouse_inside_control(faction_panel, mouse_position):
@@ -169,11 +195,17 @@ func _is_mouse_inside_control(control: Control, mouse_position: Vector2) -> bool
 	return control.get_global_rect().has_point(mouse_position)
 
 
-func _update_resource_label() -> void:
-	if resource_label == null:
-		return
+func _update_resource_panel() -> void:
+	for faction_id in faction_resource_labels.keys():
+		var label: Label = faction_resource_labels[faction_id]
+		if label == null:
+			continue
 
-	resource_label.text = EconomySystem.get_debug_text()
+		var faction: FactionConfig = FactionSystem.get_faction(faction_id)
+		var marker: String = "▶ " if faction_id == FactionSystem.active_faction_id else "  "
+		var name_str: String = faction.display_name if faction != null else String(faction_id)
+
+		label.text = "%s%s  %s" % [marker, name_str, EconomySystem.get_debug_text(faction_id)]
 
 
 func _rebuild_faction_buttons() -> void:
@@ -272,7 +304,7 @@ func _create_build_buttons() -> void:
 		button.custom_minimum_size = build_button_size
 		button.mouse_filter = Control.MOUSE_FILTER_STOP
 
-		button.disabled = not EconomySystem.can_afford_config(config)
+		button.disabled = not EconomySystem.can_afford_config(FactionSystem.active_faction_id, config)
 
 		build_panel.add_child(button)
 
@@ -347,8 +379,8 @@ func _on_build_button_pressed(config: BuildingConfig) -> void:
 	placement_system.start_placing(config)
 
 
-func _on_resources_changed() -> void:
-	_update_resource_label()
+func _on_resources_changed(_faction_id: StringName) -> void:
+	_update_resource_panel()
 	_rebuild_panel_buttons()
 
 
@@ -357,5 +389,6 @@ func _on_expansion_mode_changed(_is_expanding: bool) -> void:
 
 
 func _on_active_faction_changed(_faction_id: StringName) -> void:
+	_update_resource_panel()
 	_rebuild_faction_buttons()
 	_rebuild_panel_buttons()

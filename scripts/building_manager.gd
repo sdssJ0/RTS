@@ -59,7 +59,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		size_in_cells,
 		active_faction_id
 	)
-	var can_afford: bool = EconomySystem.can_afford_config(config)
+	var can_afford: bool = EconomySystem.can_afford_config(active_faction_id, config)
 
 	print("BuildingManager place check:")
 	print("  active_faction_id =", active_faction_id)
@@ -97,7 +97,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		print("========================================================")
 		return false
 
-	if not EconomySystem.try_spend_config(config):
+	if not EconomySystem.try_spend_config(active_faction_id, config):
 		print("BuildingManager: cannot place. Spend failed.")
 		print("========================================================")
 		return false
