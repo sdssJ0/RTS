@@ -8,7 +8,7 @@ signal expansion_mode_changed(is_expanding: bool)
 
 @export_group("Expansion")
 @export var expansion_cells_per_click: int = 5
-@export var debug_expansion: bool = true
+@export var debug_expansion: bool = false
 
 @onready var hud: HUD = get_node_or_null(hud_path) as HUD
 
@@ -85,8 +85,6 @@ func start_expansion_mode() -> void:
 	current_hover_cell = Vector2i(999999, 999999)
 	preview_cells.clear()
 
-	print("ExpansionController: expansion mode started. Active faction =", FactionSystem.active_faction_id)
-
 	emit_signal("expansion_mode_changed", true)
 	emit_signal("territory_preview_changed")
 
@@ -99,8 +97,6 @@ func stop_expansion_mode() -> void:
 	ignore_click_until_next_frame = false
 	current_hover_cell = Vector2i(999999, 999999)
 	preview_cells.clear()
-
-	print("ExpansionController: expansion mode stopped.")
 
 	emit_signal("expansion_mode_changed", false)
 	emit_signal("territory_preview_changed")
@@ -175,7 +171,6 @@ func _clear_preview() -> void:
 
 func _apply_current_preview_expansion() -> void:
 	if preview_cells.is_empty():
-		print("ExpansionController: cannot expand here. Invalid start cell:", current_hover_cell)
 		return
 
 	var active_faction_id: StringName = FactionSystem.active_faction_id
@@ -187,7 +182,7 @@ func _apply_current_preview_expansion() -> void:
 	var added: int = TerritoryService.add_owned_cells_for_faction(preview_cells, active_faction_id)
 
 	if added > 0:
-		print("ExpansionController: expanded faction:", active_faction_id, " added cells:", added)
+		print("ExpansionController: ", active_faction_id, " expanded ", added, " cells")
 
 	preview_cells.clear()
 	current_hover_cell = Vector2i(999999, 999999)

@@ -19,9 +19,6 @@ func _ready() -> void:
 
 	print("FactionSystem ready. Active faction =", active_faction_id)
 
-	for faction in get_all_factions():
-		print("  Faction:", faction.id, faction.display_name)
-
 
 func _load_default_factions_if_empty() -> void:
 	if not factions.is_empty():
@@ -81,7 +78,6 @@ func set_active_faction(faction_id: StringName) -> void:
 	_ensure_active_faction()
 
 	if active_faction_id == faction_id:
-		print("FactionSystem: active faction already =", active_faction_id)
 		return
 
 	if not has_faction(faction_id):
@@ -89,8 +85,6 @@ func set_active_faction(faction_id: StringName) -> void:
 		return
 
 	active_faction_id = faction_id
-
-	print("FactionSystem: active faction changed to:", active_faction_id)
 
 	emit_signal("active_faction_changed", active_faction_id)
 

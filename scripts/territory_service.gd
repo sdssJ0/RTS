@@ -9,10 +9,7 @@ var cell_owner: Dictionary = {}
 
 func _ready() -> void:
 	_create_initial_territory()
-
-	print("TerritoryService ready.")
-	debug_print_faction_territory_counts()
-
+	print("TerritoryService ready. Total cells = ", cell_owner.size())
 	emit_signal("territory_changed")
 
 
@@ -173,8 +170,6 @@ func _create_initial_territory() -> void:
 		if faction == null:
 			continue
 
-		print("Create initial territory for faction:", faction.id, faction.display_name)
-
 		for y in range(faction.initial_size.y):
 			for x in range(faction.initial_size.x):
 				var cell: Vector2i = faction.initial_origin + Vector2i(x, y)
@@ -191,25 +186,3 @@ func _create_initial_territory() -> void:
 					continue
 
 				cell_owner[cell] = faction.id
-
-
-# ─── Debug ────────────────────────────────────────────────────────────
-
-func debug_print_faction_territory_counts() -> void:
-	print("========== Territory Counts ==========")
-	print("Total cells =", cell_owner.size())
-
-	for faction in FactionSystem.get_all_factions():
-		if faction == null:
-			continue
-
-		print(
-			"Faction ",
-			faction.id,
-			" / ",
-			faction.display_name,
-			" cells = ",
-			get_owned_cells_for_faction(faction.id).size()
-		)
-
-	print("======================================")

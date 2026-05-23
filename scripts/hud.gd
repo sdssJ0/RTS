@@ -166,8 +166,6 @@ func _set_mouse_over_ui(value: bool) -> void:
 
 	is_mouse_over_ui = value
 
-	print("HUD: is_mouse_over_ui =", is_mouse_over_ui)
-
 	emit_signal("ui_mouse_block_changed", is_mouse_over_ui)
 
 
@@ -288,8 +286,6 @@ func _create_separator() -> void:
 func _create_build_buttons() -> void:
 	var configs: Array[BuildingConfig] = BuildingCatalog.get_all_configs()
 
-	print("HUD: Building config count =", configs.size())
-
 	for config in configs:
 		if config == null:
 			continue
@@ -308,8 +304,6 @@ func _create_build_buttons() -> void:
 		button.pressed.connect(func() -> void:
 			_on_build_button_pressed(captured_config)
 		)
-
-		print("HUD: Button created:", config.display_name)
 
 
 func _get_button_text(config: BuildingConfig) -> String:
@@ -336,8 +330,6 @@ func _get_resource_display_name(resource_id: StringName) -> String:
 
 
 func _on_end_turn_pressed() -> void:
-	print("HUD: end turn pressed.")
-
 	if placement_system != null:
 		placement_system.cancel_placing()
 
@@ -348,8 +340,6 @@ func _on_end_turn_pressed() -> void:
 
 
 func _on_expand_button_pressed() -> void:
-	print("HUD: expand territory button pressed.")
-
 	if placement_system != null:
 		placement_system.cancel_placing()
 
@@ -361,8 +351,6 @@ func _on_expand_button_pressed() -> void:
 
 
 func _on_build_button_pressed(config: BuildingConfig) -> void:
-	print("HUD: selected building:", config.display_name)
-
 	if expansion_controller != null:
 		expansion_controller.stop_expansion_mode()
 

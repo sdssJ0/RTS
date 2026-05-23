@@ -30,8 +30,6 @@ var ignore_place_until_next_frame: bool = false
 func _ready() -> void:
 	set_process_input(true)
 
-	print("PlacementSystem ready.")
-
 	if building_manager == null:
 		push_error("PlacementSystem: BuildingManager not found. Path = " + str(building_manager_path))
 
@@ -43,6 +41,8 @@ func _ready() -> void:
 
 	if preview_building_scene == null:
 		push_warning("PlacementSystem: Preview Building Scene is not assigned.")
+
+	print("PlacementSystem ready.")
 
 
 func _process(_delta: float) -> void:
@@ -126,8 +126,6 @@ func start_placing(config: BuildingConfig) -> void:
 	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
 	_update_preview_visual()
 
-	print("Start placing:", config.display_name, " faction:", FactionSystem.active_faction_id)
-
 
 func cancel_placing() -> void:
 	is_placing = false
@@ -172,10 +170,6 @@ func _create_preview() -> void:
 		current_config
 	)
 
-	print("Preview faction =", active_faction_id)
-	print("Preview building =", current_config.display_name)
-	print("Preview texture =", preview_texture)
-
 	preview_instance.owner_faction_id = active_faction_id
 	preview_instance.owner_texture = preview_texture
 	preview_instance.apply_owner_visual()
@@ -183,8 +177,6 @@ func _create_preview() -> void:
 	preview_instance.z_as_relative = false
 	preview_instance.z_index = 10000
 	preview_instance.visible = true
-
-	print("PlacementSystem: preview created.")
 
 
 func _screen_to_world_position(screen_position: Vector2) -> Vector2:
@@ -231,43 +223,24 @@ func _update_preview_visual() -> void:
 
 func _try_place_current_building() -> void:
 	if current_config == null:
-		print("PlacementSystem: current_config is null.")
 		return
 
 	if building_manager == null:
-		print("PlacementSystem: building_manager is null.")
 		return
 
 	if debug_mouse_position:
 		_print_place_debug()
 
 	if not current_grid_can_place:
-		print("Cannot place building here. Grid blocked:", current_cell)
 		return
 
 	if not current_is_own_territory:
-		print("Cannot place building. Not current faction territory:", current_cell)
-		print("  Active faction:", FactionSystem.active_faction_id)
-		print("  Cell owner:", TerritoryService.get_cell_owner(current_cell))
 		return
 
 	if not current_can_afford:
-		print("Cannot place building. Not enough resource.")
-		print("  Cost Resource:", current_config.cost_resource_id)
-		print("  Cost:", current_config.cost)
 		return
 
-	var success: bool = building_manager.try_place_building(
-		current_config,
-		current_cell
-	)
-
-	print("PlacementSystem: BuildingManager result =", success)
-
-	if success:
-		print("Building placed:", current_config.display_name, " at cell:", current_cell)
-	else:
-		print("Building place failed.")
+	building_manager.try_place_building(current_config, current_cell)
 
 
 func _print_place_debug() -> void:
