@@ -16,8 +16,29 @@ func _ready() -> void:
 
 	if building_root == null:
 		push_error("BuildingManager: BuildingRoot not found. Path = " + str(building_root_path))
+
+	TurnSystem.turn_started.connect(_on_turn_started)
 #调试代码
 	print("BuildingManager ready.")
+
+
+func _on_turn_started(faction_id: StringName) -> void:
+	if building_root == null:
+		return
+
+	var produced_count: int = 0
+
+	for child in building_root.get_children():
+		var building: BasicBuilding = child as BasicBuilding
+		if building == null:
+			continue
+		if building.owner_faction_id != faction_id:
+			continue
+
+		building.produce_one_cycle()
+		produced_count += 1
+
+	print("BuildingManager: turn produce. faction=", faction_id, " buildings=", produced_count)
 
 
 func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:

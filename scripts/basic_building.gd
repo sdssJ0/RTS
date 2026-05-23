@@ -10,8 +10,6 @@ var is_preview: bool = false
 var owner_faction_id: StringName = &""
 var owner_texture: Texture2D = null
 
-var production_timer: float = 0.0
-
 @onready var sprite: Sprite2D = get_node_or_null(sprite_path) as Sprite2D
 
 
@@ -21,7 +19,7 @@ func _ready() -> void:
 	apply_owner_visual()
 
 
-func _process(delta: float) -> void:
+func produce_one_cycle() -> void:
 	if is_preview:
 		return
 
@@ -31,16 +29,11 @@ func _process(delta: float) -> void:
 	if not _has_valid_production():
 		return
 
-	production_timer += delta
-
-	if production_timer >= config.production_interval:
-		production_timer -= config.production_interval
-
-		EconomySystem.add_resource(
-			owner_faction_id,
-			config.production_resource_id,
-			config.production_amount
-		)
+	EconomySystem.add_resource(
+		owner_faction_id,
+		config.production_resource_id,
+		config.production_amount
+	)
 
 
 func setup(building_config: BuildingConfig, cell: Vector2i) -> void:
@@ -139,9 +132,6 @@ func _has_valid_production() -> bool:
 		return false
 
 	if config.production_amount == 0:
-		return false
-
-	if config.production_interval <= 0.0:
 		return false
 
 	return true

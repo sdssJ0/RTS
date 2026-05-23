@@ -56,9 +56,10 @@ func _ready() -> void:
 	EconomySystem.resources_changed.connect(_on_resources_changed)
 	territory_system.expansion_mode_changed.connect(_on_expansion_mode_changed)
 	FactionSystem.active_faction_changed.connect(_on_active_faction_changed)
+	TurnSystem.turn_changed.connect(_on_turn_changed)
 
 	_update_resource_panel()
-	_rebuild_faction_buttons()
+	_rebuild_turn_panel()
 	_rebuild_panel_buttons()
 
 
@@ -208,7 +209,7 @@ func _update_resource_panel() -> void:
 		label.text = "%s%s  %s" % [marker, name_str, EconomySystem.get_debug_text(faction_id)]
 
 
-func _rebuild_faction_buttons() -> void:
+func _rebuild_turn_panel() -> void:
 	if faction_panel == null:
 		return
 
@@ -216,28 +217,24 @@ func _rebuild_faction_buttons() -> void:
 		faction_panel.remove_child(child)
 		child.queue_free()
 
-	for faction in FactionSystem.get_all_factions():
-		if faction == null:
-			continue
+	var faction_id: StringName = FactionSystem.active_faction_id
+	var faction: FactionConfig = FactionSystem.get_faction(faction_id)
+	var faction_name: String = faction.display_name if faction != null else String(faction_id)
 
-		var captured_faction_id: StringName = faction.id
+	var turn_label: Label = Label.new()
+	turn_label.text = "回合 %d  ▶ %s" % [TurnSystem.current_turn, faction_name]
+	if faction != null:
+		turn_label.add_theme_color_override("font_color", faction.ui_color)
+	turn_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	faction_panel.add_child(turn_label)
 
-		var button: Button = Button.new()
-		button.custom_minimum_size = faction_button_size
-		button.mouse_filter = Control.MOUSE_FILTER_STOP
+	var end_turn_button: Button = Button.new()
+	end_turn_button.text = "结束回合"
+	end_turn_button.custom_minimum_size = faction_button_size
+	end_turn_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	faction_panel.add_child(end_turn_button)
 
-		if FactionSystem.active_faction_id == captured_faction_id:
-			button.text = "✓ " + faction.display_name
-		else:
-			button.text = faction.display_name
-
-		button.modulate = faction.ui_color
-
-		faction_panel.add_child(button)
-
-		button.pressed.connect(func() -> void:
-			_on_faction_button_pressed(captured_faction_id)
-		)
+	end_turn_button.pressed.connect(_on_end_turn_pressed)
 
 
 func _rebuild_panel_buttons() -> void:
@@ -338,8 +335,8 @@ func _get_resource_display_name(resource_id: StringName) -> String:
 			return String(resource_id)
 
 
-func _on_faction_button_pressed(faction_id: StringName) -> void:
-	print("HUD: faction button pressed:", faction_id)
+func _on_end_turn_pressed() -> void:
+	print("HUD: end turn pressed.")
 
 	if placement_system != null:
 		placement_system.cancel_placing()
@@ -347,10 +344,7 @@ func _on_faction_button_pressed(faction_id: StringName) -> void:
 	if territory_system != null:
 		territory_system.stop_expansion_mode()
 
-	if FactionSystem != null:
-		print("HUD: active faction before =", FactionSystem.active_faction_id)
-		FactionSystem.set_active_faction(faction_id)
-		print("HUD: active faction after =", FactionSystem.active_faction_id)
+	TurnSystem.end_turn()
 
 
 func _on_expand_button_pressed() -> void:
@@ -390,5 +384,9 @@ func _on_expansion_mode_changed(_is_expanding: bool) -> void:
 
 func _on_active_faction_changed(_faction_id: StringName) -> void:
 	_update_resource_panel()
-	_rebuild_faction_buttons()
+	_rebuild_turn_panel()
 	_rebuild_panel_buttons()
+
+
+func _on_turn_changed() -> void:
+	_rebuild_turn_panel()
