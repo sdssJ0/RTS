@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GridSystem="*res://scripts/grid_system.gd"
 FactionSystem="*res://scripts/faction_system.gd"
 EconomySystem="*res://scripts/money_system.gd"
+TerritoryService="*res://scripts/territory_service.gd"
 BuildingCatalog="*res://scripts/building_catalog.gd"
 TurnSystem="*res://scripts/turn_system.gd"
 

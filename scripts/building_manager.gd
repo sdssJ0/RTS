@@ -3,17 +3,12 @@ extends Node
 
 signal building_placed(building: BasicBuilding, config: BuildingConfig, cell: Vector2i)
 
-@export var territory_system_path: NodePath = "../TerritorySystem"
 @export var building_root_path: NodePath = "../../World2D/BuildingRoot"
 
-@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var building_root: Node2D = get_node_or_null(building_root_path) as Node2D
 
 
 func _ready() -> void:
-	if territory_system == null:
-		push_error("BuildingManager: TerritorySystem not found. Path = " + str(territory_system_path))
-
 	if building_root == null:
 		push_error("BuildingManager: BuildingRoot not found. Path = " + str(building_root_path))
 
@@ -53,11 +48,6 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	print("BuildingManager: config =", config.display_name)
 	print("BuildingManager: target cell =", cell)
 
-	if territory_system == null:
-		push_error("BuildingManager: territory_system is null.")
-		print("========================================================")
-		return false
-
 	if building_root == null:
 		push_error("BuildingManager: building_root is null.")
 		print("========================================================")
@@ -72,10 +62,10 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		return false
 
 	var size_in_cells: Vector2i = config.size_in_cells
-	var active_faction_id: StringName = territory_system.get_active_faction_id()
+	var active_faction_id: StringName = FactionSystem.active_faction_id
 
 	var grid_can_place: bool = GridSystem.can_place_area(cell, size_in_cells)
-	var area_owned: bool = territory_system.is_area_owned_by_faction(
+	var area_owned: bool = TerritoryService.is_area_owned_by_faction(
 		cell,
 		size_in_cells,
 		active_faction_id
@@ -86,7 +76,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	print("  active_faction_id =", active_faction_id)
 	print("  cell =", cell)
 	print("  size =", size_in_cells)
-	print("  cell owner =", territory_system.get_cell_owner(cell))
+	print("  cell owner =", TerritoryService.get_cell_owner(cell))
 	print("  grid can place =", grid_can_place)
 	print("  area owned by faction =", area_owned)
 	print("  can afford =", can_afford)
@@ -107,7 +97,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	if not area_owned:
 		print("BuildingManager: cannot place. Area not owned by active faction.")
 		print("  Active faction =", active_faction_id)
-		print("  Cell owner =", territory_system.get_cell_owner(cell))
+		print("  Cell owner =", TerritoryService.get_cell_owner(cell))
 		print("========================================================")
 		return false
 
@@ -144,7 +134,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	building.grid_cell = cell
 	building.is_preview = false
 	building.owner_faction_id = active_faction_id
-	building.owner_texture = territory_system.get_building_texture_for_faction(
+	building.owner_texture = TerritoryService.get_building_texture_for_faction(
 		active_faction_id,
 		config
 	)

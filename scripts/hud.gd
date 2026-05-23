@@ -4,7 +4,7 @@ extends Control
 signal ui_mouse_block_changed(is_blocking: bool)
 
 @export var placement_system_path: NodePath = "../../Systems/PlacementSystem"
-@export var territory_system_path: NodePath = "../../Systems/TerritorySystem"
+@export var expansion_controller_path: NodePath = "../../Systems/ExpansionController"
 
 @export var block_world_input_when_mouse_over_ui: bool = true
 
@@ -14,7 +14,7 @@ signal ui_mouse_block_changed(is_blocking: bool)
 @export var faction_button_size: Vector2 = Vector2(110, 40)
 
 @onready var placement_system: PlacementSystem = get_node_or_null(placement_system_path) as PlacementSystem
-@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
+@onready var expansion_controller: ExpansionController = get_node_or_null(expansion_controller_path) as ExpansionController
 
 @onready var build_panel: VBoxContainer = get_node_or_null("BuildPanel") as VBoxContainer
 
@@ -31,8 +31,8 @@ func _ready() -> void:
 		push_error("HUD: PlacementSystem not found. Path = " + str(placement_system_path))
 		return
 
-	if territory_system == null:
-		push_error("HUD: TerritorySystem not found. Path = " + str(territory_system_path))
+	if expansion_controller == null:
+		push_error("HUD: ExpansionController not found. Path = " + str(expansion_controller_path))
 		return
 
 	if build_panel == null:
@@ -54,7 +54,7 @@ func _ready() -> void:
 	set_process(true)
 
 	EconomySystem.resources_changed.connect(_on_resources_changed)
-	territory_system.expansion_mode_changed.connect(_on_expansion_mode_changed)
+	expansion_controller.expansion_mode_changed.connect(_on_expansion_mode_changed)
 	FactionSystem.active_faction_changed.connect(_on_active_faction_changed)
 	TurnSystem.turn_changed.connect(_on_turn_changed)
 
@@ -265,8 +265,8 @@ func _fit_build_panel_to_content() -> void:
 func _create_expand_button() -> void:
 	var button: Button = Button.new()
 
-	if territory_system != null and territory_system.is_expansion_mode:
-		button.text = "扩张中：左键扩张%d格 / 右键取消" % territory_system.expansion_cells_per_click
+	if expansion_controller != null and expansion_controller.is_expansion_mode:
+		button.text = "扩张中：左键扩张%d格 / 右键取消" % expansion_controller.expansion_cells_per_click
 	else:
 		button.text = "扩张领土"
 
@@ -341,8 +341,8 @@ func _on_end_turn_pressed() -> void:
 	if placement_system != null:
 		placement_system.cancel_placing()
 
-	if territory_system != null:
-		territory_system.stop_expansion_mode()
+	if expansion_controller != null:
+		expansion_controller.stop_expansion_mode()
 
 	TurnSystem.end_turn()
 
@@ -353,18 +353,18 @@ func _on_expand_button_pressed() -> void:
 	if placement_system != null:
 		placement_system.cancel_placing()
 
-	if territory_system == null:
-		push_error("HUD: territory_system is null.")
+	if expansion_controller == null:
+		push_error("HUD: expansion_controller is null.")
 		return
 
-	territory_system.toggle_expansion_mode()
+	expansion_controller.toggle_expansion_mode()
 
 
 func _on_build_button_pressed(config: BuildingConfig) -> void:
 	print("HUD: selected building:", config.display_name)
 
-	if territory_system != null:
-		territory_system.stop_expansion_mode()
+	if expansion_controller != null:
+		expansion_controller.stop_expansion_mode()
 
 	if placement_system == null:
 		push_error("HUD: placement_system is null.")

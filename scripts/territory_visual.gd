@@ -1,41 +1,38 @@
 class_name TerritoryVisual
 extends Node2D
 
-@export var territory_system_path: NodePath = "../../Systems/TerritorySystem"
+@export var expansion_controller_path: NodePath = "../../Systems/ExpansionController"
 
 @export var border_width: float = 2.0
 @export var preview_line_width: float = 2.0
 @export var draw_preview_numbers: bool = true
 
-@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
+@onready var expansion_controller: ExpansionController = get_node_or_null(expansion_controller_path) as ExpansionController
 
 
 func _ready() -> void:
-	if territory_system == null:
-		push_error("TerritoryVisual: TerritorySystem not found. Path = " + str(territory_system_path))
-		return
+	TerritoryService.territory_changed.connect(_on_territory_changed)
 
-	territory_system.territory_changed.connect(_on_territory_changed)
-	territory_system.territory_preview_changed.connect(_on_territory_preview_changed)
+	if expansion_controller != null:
+		expansion_controller.territory_preview_changed.connect(_on_territory_preview_changed)
+	else:
+		push_warning("TerritoryVisual: ExpansionController not found. Path = " + str(expansion_controller_path))
 
 	queue_redraw()
 
 
 func _draw() -> void:
-	if territory_system == null:
-		return
-
 	_draw_all_faction_borders()
 	_draw_preview_cells()
 
 
 func _draw_all_faction_borders() -> void:
-	var owners: Dictionary = territory_system.get_all_owned_cell_owners()
+	var owners: Dictionary = TerritoryService.get_all_owned_cell_owners()
 
 	for key in owners.keys():
 		var cell: Vector2i = key as Vector2i
 		var owner_id: StringName = owners[cell] as StringName
-		var color: Color = territory_system.get_territory_color_for_faction(owner_id)
+		var color: Color = TerritoryService.get_territory_color_for_faction(owner_id)
 
 		_draw_cell_border_edges(cell, owner_id, owners, color)
 
@@ -68,13 +65,16 @@ func _draw_cell_border_edges(
 
 
 func _draw_preview_cells() -> void:
-	var preview_cells: Array[Vector2i] = territory_system.get_preview_cells()
+	if expansion_controller == null:
+		return
+
+	var preview_cells: Array[Vector2i] = expansion_controller.get_preview_cells()
 
 	if preview_cells.is_empty():
 		return
 
 	var cell_size: Vector2 = _get_cell_size_vector()
-	var fill_color: Color = territory_system.get_preview_color_for_active_faction()
+	var fill_color: Color = TerritoryService.get_preview_color_for_active_faction()
 
 	var line_color: Color = fill_color
 	line_color.a = min(fill_color.a + 0.35, 1.0)

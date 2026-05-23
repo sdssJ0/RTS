@@ -2,7 +2,6 @@ class_name PlacementSystem
 extends Node
 
 @export var building_manager_path: NodePath = "../BuildingManager"
-@export var territory_system_path: NodePath = "../TerritorySystem"
 @export var hud_path: NodePath = "../../UI/HUD"
 @export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
 
@@ -10,7 +9,6 @@ extends Node
 @export var debug_mouse_position: bool = false
 
 @onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
-@onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var hud: HUD = get_node_or_null(hud_path) as HUD
 @onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
 
@@ -36,9 +34,6 @@ func _ready() -> void:
 
 	if building_manager == null:
 		push_error("PlacementSystem: BuildingManager not found. Path = " + str(building_manager_path))
-
-	if territory_system == null:
-		push_error("PlacementSystem: TerritorySystem not found. Path = " + str(territory_system_path))
 
 	if hud == null:
 		push_warning("PlacementSystem: HUD not found. Path = " + str(hud_path))
@@ -114,10 +109,6 @@ func start_placing(config: BuildingConfig) -> void:
 		push_error("PlacementSystem: building_manager is null.")
 		return
 
-	if territory_system == null:
-		push_error("PlacementSystem: territory_system is null.")
-		return
-
 	if preview_root == null:
 		push_error("PlacementSystem: preview_root is null.")
 		return
@@ -135,7 +126,7 @@ func start_placing(config: BuildingConfig) -> void:
 	_update_mouse_cell_from_screen_position(get_viewport().get_mouse_position())
 	_update_preview_visual()
 
-	print("Start placing:", config.display_name, " faction:", territory_system.get_active_faction_id())
+	print("Start placing:", config.display_name, " faction:", FactionSystem.active_faction_id)
 
 
 func cancel_placing() -> void:
@@ -175,20 +166,19 @@ func _create_preview() -> void:
 	preview_instance.set_preview_mode(true)
 	preview_instance.setup(current_config, Vector2i.ZERO)
 
-	if territory_system != null:
-		var active_faction_id: StringName = territory_system.get_active_faction_id()
-		var preview_texture: Texture2D = territory_system.get_building_texture_for_faction(
-			active_faction_id,
-			current_config
-		)
+	var active_faction_id: StringName = FactionSystem.active_faction_id
+	var preview_texture: Texture2D = TerritoryService.get_building_texture_for_faction(
+		active_faction_id,
+		current_config
+	)
 
-		print("Preview faction =", active_faction_id)
-		print("Preview building =", current_config.display_name)
-		print("Preview texture =", preview_texture)
+	print("Preview faction =", active_faction_id)
+	print("Preview building =", current_config.display_name)
+	print("Preview texture =", preview_texture)
 
-		preview_instance.owner_faction_id = active_faction_id
-		preview_instance.owner_texture = preview_texture
-		preview_instance.apply_owner_visual()
+	preview_instance.owner_faction_id = active_faction_id
+	preview_instance.owner_texture = preview_texture
+	preview_instance.apply_owner_visual()
 
 	preview_instance.z_as_relative = false
 	preview_instance.z_index = 10000
@@ -214,16 +204,14 @@ func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
 		current_config.size_in_cells
 	)
 
-	var active_faction_id: StringName = territory_system.get_active_faction_id() if territory_system != null else &""
+	var active_faction_id: StringName = FactionSystem.active_faction_id
 	current_can_afford = EconomySystem.can_afford_config(active_faction_id, current_config)
 
-	if territory_system != null:
-		current_is_own_territory = territory_system.is_area_owned(
-			current_cell,
-			current_config.size_in_cells
-		)
-	else:
-		current_is_own_territory = false
+	current_is_own_territory = TerritoryService.is_area_owned_by_faction(
+		current_cell,
+		current_config.size_in_cells,
+		active_faction_id
+	)
 
 	current_can_place = current_grid_can_place and current_can_afford and current_is_own_territory
 
@@ -259,9 +247,8 @@ func _try_place_current_building() -> void:
 
 	if not current_is_own_territory:
 		print("Cannot place building. Not current faction territory:", current_cell)
-		if territory_system != null:
-			print("  Active faction:", territory_system.get_active_faction_id())
-			print("  Cell owner:", territory_system.get_cell_owner(current_cell))
+		print("  Active faction:", FactionSystem.active_faction_id)
+		print("  Cell owner:", TerritoryService.get_cell_owner(current_cell))
 		return
 
 	if not current_can_afford:
@@ -285,10 +272,10 @@ func _try_place_current_building() -> void:
 
 func _print_place_debug() -> void:
 	print("PlacementSystem debug:")
-	print("  Active faction:", territory_system.get_active_faction_id() if territory_system != null else &"")
+	print("  Active faction:", FactionSystem.active_faction_id)
 	print("  Mouse world:", current_mouse_world_position)
 	print("  Cell:", current_cell)
-	print("  Cell owner:", territory_system.get_cell_owner(current_cell) if territory_system != null else &"")
+	print("  Cell owner:", TerritoryService.get_cell_owner(current_cell))
 	print("  Grid can place:", current_grid_can_place)
 	print("  Can afford:", current_can_afford)
 	print("  Own territory:", current_is_own_territory)

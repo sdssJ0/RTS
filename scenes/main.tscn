@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://drgebyrwfarb" path="res://scripts/grid_visual.gd" id="4_jyhfs"]
 [ext_resource type="Script" uid="uid://dy7qvnjhbxrig" path="res://scripts/hud.gd" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://b38q0r3uvoyie" path="res://scenes/BasicBuilding.tscn" id="6_tefeu"]
-[ext_resource type="Script" uid="uid://dkgai8e3itq62" path="res://scripts/territory_system.gd" id="11_a8y0u"]
+[ext_resource type="Script" path="res://scripts/expansion_controller.gd" id="11_a8y0u"]
 [ext_resource type="Script" uid="uid://c1ptm7g6t2ra3" path="res://scripts/territory_visual.gd" id="13_jkv2x"]
 [ext_resource type="Script" uid="uid://di5yb1ks3n8uy" path="res://scripts/camera_2d.gd" id="14_jkv2x"]
 
@@ -20,9 +20,8 @@ script = ExtResource("2_0wfyh")
 script = ExtResource("3_sugp2")
 preview_building_scene = ExtResource("6_tefeu")
 
-[node name="TerritorySystem" type="Node" parent="Systems"]
+[node name="ExpansionController" type="Node" parent="Systems"]
 script = ExtResource("11_a8y0u")
-country_color = Color(1, 0.30606714, 0.34195584, 1)
 
 [node name="World2D" type="Node2D" parent="."]
 
