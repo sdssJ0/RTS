@@ -2,7 +2,6 @@ class_name GameCamera
 extends Camera2D
 
 @export_group("Grid Map Bounds")
-@export var grid_system_path: NodePath = "../../Systems/GridSystem"
 @export var hud_path: NodePath = "../../UI/HUD"
 @export var use_map_bounds: bool = true
 
@@ -30,7 +29,6 @@ extends Camera2D
 @export var edge_scroll_margin: float = 20.0
 @export var edge_scroll_speed: float = 500.0
 
-@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var hud: HUD = get_node_or_null(hud_path) as HUD
 
 var is_dragging: bool = false
@@ -46,11 +44,6 @@ func _ready() -> void:
 	_clamp_camera_to_map_bounds()
 
 	print("GameCamera ready.")
-
-	if grid_system == null:
-		push_warning("GameCamera: GridSystem not found. Path = " + str(grid_system_path))
-	else:
-		print("GameCamera: GridSystem found:", grid_system.name)
 
 	if hud == null:
 		push_warning("GameCamera: HUD not found. Path = " + str(hud_path))
@@ -235,10 +228,7 @@ func _get_visible_world_size() -> Vector2:
 
 
 func _get_map_world_rect() -> Rect2:
-	var cell_size: float = 16.0
-
-	if grid_system != null:
-		cell_size = float(grid_system.cell_size)
+	var cell_size: float = float(GridSystem.cell_size)
 
 	var map_position: Vector2 = Vector2(
 		map_origin_cell.x * cell_size,

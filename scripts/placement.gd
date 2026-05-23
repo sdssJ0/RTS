@@ -1,9 +1,7 @@
 class_name PlacementSystem
 extends Node
 
-@export var grid_system_path: NodePath = "../GridSystem"
 @export var building_manager_path: NodePath = "../BuildingManager"
-@export var economy_system_path: NodePath = "../EconomySystem"
 @export var territory_system_path: NodePath = "../TerritorySystem"
 @export var hud_path: NodePath = "../../UI/HUD"
 @export var preview_root_path: NodePath = "../../World2D/PreviewRoot"
@@ -11,9 +9,7 @@ extends Node
 @export var preview_building_scene: PackedScene
 @export var debug_mouse_position: bool = false
 
-@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var building_manager: BuildingManager = get_node_or_null(building_manager_path) as BuildingManager
-@onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var hud: HUD = get_node_or_null(hud_path) as HUD
 @onready var preview_root: Node2D = get_node_or_null(preview_root_path) as Node2D
@@ -38,14 +34,8 @@ func _ready() -> void:
 
 	print("PlacementSystem ready.")
 
-	if grid_system == null:
-		push_error("PlacementSystem: GridSystem not found. Path = " + str(grid_system_path))
-
 	if building_manager == null:
 		push_error("PlacementSystem: BuildingManager not found. Path = " + str(building_manager_path))
-
-	if economy_system == null:
-		push_error("PlacementSystem: EconomySystem not found. Path = " + str(economy_system_path))
 
 	if territory_system == null:
 		push_error("PlacementSystem: TerritorySystem not found. Path = " + str(territory_system_path))
@@ -120,16 +110,8 @@ func start_placing(config: BuildingConfig) -> void:
 		push_error("PlacementSystem: config is null.")
 		return
 
-	if grid_system == null:
-		push_error("PlacementSystem: grid_system is null.")
-		return
-
 	if building_manager == null:
 		push_error("PlacementSystem: building_manager is null.")
-		return
-
-	if economy_system == null:
-		push_error("PlacementSystem: economy_system is null.")
 		return
 
 	if territory_system == null:
@@ -224,21 +206,15 @@ func _update_mouse_cell_from_screen_position(screen_position: Vector2) -> void:
 	if current_config == null:
 		return
 
-	if grid_system == null:
-		return
-
 	current_mouse_world_position = _screen_to_world_position(screen_position)
-	current_cell = grid_system.world_to_cell(current_mouse_world_position)
+	current_cell = GridSystem.world_to_cell(current_mouse_world_position)
 
-	current_grid_can_place = grid_system.can_place_area(
+	current_grid_can_place = GridSystem.can_place_area(
 		current_cell,
 		current_config.size_in_cells
 	)
 
-	if economy_system != null:
-		current_can_afford = economy_system.can_afford_config(current_config)
-	else:
-		current_can_afford = false
+	current_can_afford = EconomySystem.can_afford_config(current_config)
 
 	if territory_system != null:
 		current_is_own_territory = territory_system.is_area_owned(
@@ -258,10 +234,7 @@ func _update_preview_visual() -> void:
 	if current_config == null:
 		return
 
-	if grid_system == null:
-		return
-
-	var snapped_position: Vector2 = grid_system.cell_to_world(current_cell)
+	var snapped_position: Vector2 = GridSystem.cell_to_world(current_cell)
 	preview_instance.global_position = snapped_position
 
 	preview_instance.set_preview_valid(current_can_place)

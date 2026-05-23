@@ -1,22 +1,16 @@
 class_name TerritoryVisual
 extends Node2D
 
-@export var grid_system_path: NodePath = "../../Systems/GridSystem"
 @export var territory_system_path: NodePath = "../../Systems/TerritorySystem"
 
 @export var border_width: float = 2.0
 @export var preview_line_width: float = 2.0
 @export var draw_preview_numbers: bool = true
 
-@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 
 
 func _ready() -> void:
-	if grid_system == null:
-		push_error("TerritoryVisual: GridSystem not found. Path = " + str(grid_system_path))
-		return
-
 	if territory_system == null:
 		push_error("TerritoryVisual: TerritorySystem not found. Path = " + str(territory_system_path))
 		return
@@ -28,9 +22,6 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	if grid_system == null:
-		return
-
 	if territory_system == null:
 		return
 
@@ -56,7 +47,7 @@ func _draw_cell_border_edges(
 	color: Color
 ) -> void:
 	var cell_size: Vector2 = _get_cell_size_vector()
-	var world_pos: Vector2 = grid_system.cell_to_world(cell)
+	var world_pos: Vector2 = GridSystem.cell_to_world(cell)
 
 	var top_left: Vector2 = world_pos
 	var top_right: Vector2 = world_pos + Vector2(cell_size.x, 0)
@@ -92,7 +83,7 @@ func _draw_preview_cells() -> void:
 
 	for i in range(preview_cells.size()):
 		var cell: Vector2i = preview_cells[i]
-		var world_pos: Vector2 = grid_system.cell_to_world(cell)
+		var world_pos: Vector2 = GridSystem.cell_to_world(cell)
 		var rect: Rect2 = Rect2(world_pos, cell_size)
 
 		draw_rect(rect, fill_color, true)
@@ -129,7 +120,7 @@ func _get_owner_from_dictionary(owners: Dictionary, cell: Vector2i) -> StringNam
 
 
 func _get_cell_size_vector() -> Vector2:
-	var raw_cell_size: Variant = grid_system.get("cell_size")
+	var raw_cell_size: Variant = GridSystem.get("cell_size")
 
 	match typeof(raw_cell_size):
 		TYPE_VECTOR2:

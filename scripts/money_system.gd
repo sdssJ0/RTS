@@ -1,4 +1,3 @@
-class_name EconomySystem
 extends Node
 
 signal resources_changed

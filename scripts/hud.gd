@@ -4,10 +4,7 @@ extends Control
 signal ui_mouse_block_changed(is_blocking: bool)
 
 @export var placement_system_path: NodePath = "../../Systems/PlacementSystem"
-@export var building_catalog_path: NodePath = "../../Systems/BuildingCatalog"
-@export var economy_system_path: NodePath = "../../Systems/EconomySystem"
 @export var territory_system_path: NodePath = "../../Systems/TerritorySystem"
-@export var faction_system_path: NodePath = "../../Systems/FactionSystem"
 
 @export var block_world_input_when_mouse_over_ui: bool = true
 
@@ -17,10 +14,7 @@ signal ui_mouse_block_changed(is_blocking: bool)
 @export var faction_button_size: Vector2 = Vector2(110, 40)
 
 @onready var placement_system: PlacementSystem = get_node_or_null(placement_system_path) as PlacementSystem
-@onready var building_catalog: BuildingCatalog = get_node_or_null(building_catalog_path) as BuildingCatalog
-@onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
-@onready var faction_system: FactionSystem = get_node_or_null(faction_system_path) as FactionSystem
 
 @onready var build_panel: VBoxContainer = get_node_or_null("BuildPanel") as VBoxContainer
 
@@ -36,20 +30,8 @@ func _ready() -> void:
 		push_error("HUD: PlacementSystem not found. Path = " + str(placement_system_path))
 		return
 
-	if building_catalog == null:
-		push_error("HUD: BuildingCatalog not found. Path = " + str(building_catalog_path))
-		return
-
-	if economy_system == null:
-		push_error("HUD: EconomySystem not found. Path = " + str(economy_system_path))
-		return
-
 	if territory_system == null:
 		push_error("HUD: TerritorySystem not found. Path = " + str(territory_system_path))
-		return
-
-	if faction_system == null:
-		push_error("HUD: FactionSystem not found. Path = " + str(faction_system_path))
 		return
 
 	if build_panel == null:
@@ -70,9 +52,9 @@ func _ready() -> void:
 	_connect_ui_mouse_block_signals()
 	set_process(true)
 
-	economy_system.resources_changed.connect(_on_resources_changed)
+	EconomySystem.resources_changed.connect(_on_resources_changed)
 	territory_system.expansion_mode_changed.connect(_on_expansion_mode_changed)
-	faction_system.active_faction_changed.connect(_on_active_faction_changed)
+	FactionSystem.active_faction_changed.connect(_on_active_faction_changed)
 
 	_update_resource_label()
 	_rebuild_faction_buttons()
@@ -191,24 +173,18 @@ func _update_resource_label() -> void:
 	if resource_label == null:
 		return
 
-	if economy_system == null:
-		return
-
-	resource_label.text = economy_system.get_debug_text()
+	resource_label.text = EconomySystem.get_debug_text()
 
 
 func _rebuild_faction_buttons() -> void:
 	if faction_panel == null:
 		return
 
-	if faction_system == null:
-		return
-
 	for child in faction_panel.get_children():
 		faction_panel.remove_child(child)
 		child.queue_free()
 
-	for faction in faction_system.get_all_factions():
+	for faction in FactionSystem.get_all_factions():
 		if faction == null:
 			continue
 
@@ -218,7 +194,7 @@ func _rebuild_faction_buttons() -> void:
 		button.custom_minimum_size = faction_button_size
 		button.mouse_filter = Control.MOUSE_FILTER_STOP
 
-		if faction_system.active_faction_id == captured_faction_id:
+		if FactionSystem.active_faction_id == captured_faction_id:
 			button.text = "✓ " + faction.display_name
 		else:
 			button.text = faction.display_name
@@ -281,7 +257,7 @@ func _create_separator() -> void:
 
 
 func _create_build_buttons() -> void:
-	var configs: Array[BuildingConfig] = building_catalog.get_all_configs()
+	var configs: Array[BuildingConfig] = BuildingCatalog.get_all_configs()
 
 	print("HUD: Building config count =", configs.size())
 
@@ -296,8 +272,7 @@ func _create_build_buttons() -> void:
 		button.custom_minimum_size = build_button_size
 		button.mouse_filter = Control.MOUSE_FILTER_STOP
 
-		if economy_system != null:
-			button.disabled = not economy_system.can_afford_config(config)
+		button.disabled = not EconomySystem.can_afford_config(config)
 
 		build_panel.add_child(button)
 
@@ -340,10 +315,10 @@ func _on_faction_button_pressed(faction_id: StringName) -> void:
 	if territory_system != null:
 		territory_system.stop_expansion_mode()
 
-	if faction_system != null:
-		print("HUD: active faction before =", faction_system.active_faction_id)
-		faction_system.set_active_faction(faction_id)
-		print("HUD: active faction after =", faction_system.active_faction_id)
+	if FactionSystem != null:
+		print("HUD: active faction before =", FactionSystem.active_faction_id)
+		FactionSystem.set_active_faction(faction_id)
+		print("HUD: active faction after =", FactionSystem.active_faction_id)
 
 
 func _on_expand_button_pressed() -> void:

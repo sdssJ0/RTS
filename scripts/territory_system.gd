@@ -5,9 +5,7 @@ signal territory_changed
 signal territory_preview_changed
 signal expansion_mode_changed(is_expanding: bool)
 
-@export var grid_system_path: NodePath = "../GridSystem"
 @export var hud_path: NodePath = "../../UI/HUD"
-@export var faction_system_path: NodePath = "../FactionSystem"
 
 @export var country_color: Color = Color(0.2, 0.6, 1.0, 1.0)
 @export var preview_color: Color = Color(0.2, 1.0, 1.0, 0.35)
@@ -20,9 +18,7 @@ signal expansion_mode_changed(is_expanding: bool)
 @export var expansion_cells_per_click: int = 5
 @export var debug_expansion: bool = true
 
-@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
 @onready var hud: HUD = get_node_or_null(hud_path) as HUD
-@onready var faction_system: FactionSystem = get_node_or_null(faction_system_path) as FactionSystem
 
 # key = Vector2i
 # value = faction_id: StringName
@@ -38,18 +34,10 @@ var preview_cells: Array[Vector2i] = []
 func _ready() -> void:
 	set_process_input(true)
 
-	if grid_system == null:
-		push_error("TerritorySystem: GridSystem not found. Path = " + str(grid_system_path))
-		return
-
 	if hud == null:
 		push_warning("TerritorySystem: HUD not found. Path = " + str(hud_path))
 
-	if faction_system == null:
-		push_error("TerritorySystem: FactionSystem not found. Path = " + str(faction_system_path))
-		return
-
-	faction_system.active_faction_changed.connect(_on_active_faction_changed)
+	FactionSystem.active_faction_changed.connect(_on_active_faction_changed)
 
 	_create_initial_territory()
 
@@ -141,13 +129,10 @@ func toggle_expansion_mode() -> void:
 
 
 func get_active_faction_id() -> StringName:
-	if faction_system == null:
+	if FactionSystem.active_faction_id == &"":
 		return &""
 
-	if faction_system.active_faction_id == &"":
-		return &""
-
-	return faction_system.active_faction_id
+	return FactionSystem.active_faction_id
 
 
 func get_cell_owner(cell: Vector2i) -> StringName:
@@ -241,17 +226,11 @@ func has_preview() -> bool:
 
 
 func get_territory_color_for_faction(faction_id: StringName) -> Color:
-	if faction_system == null:
-		return country_color
-
-	return faction_system.get_territory_color(faction_id)
+	return FactionSystem.get_territory_color(faction_id)
 
 
 func get_preview_color_for_active_faction() -> Color:
-	if faction_system == null:
-		return preview_color
-
-	return faction_system.get_preview_color(get_active_faction_id())
+	return FactionSystem.get_preview_color(get_active_faction_id())
 
 
 func get_building_texture_for_faction(
@@ -264,10 +243,7 @@ func get_building_texture_for_faction(
 	var fallback_texture: Texture2D = config.texture
 	var building_id: StringName = _get_building_id_from_config(config)
 
-	if faction_system == null:
-		return fallback_texture
-
-	return faction_system.get_building_texture(
+	return FactionSystem.get_building_texture(
 		faction_id,
 		building_id,
 		fallback_texture
@@ -299,7 +275,7 @@ func _get_building_id_from_config(config: BuildingConfig) -> StringName:
 func _create_initial_territory() -> void:
 	cell_owner.clear()
 
-	var factions: Array[FactionConfig] = faction_system.get_all_factions()
+	var factions: Array[FactionConfig] = FactionSystem.get_all_factions()
 
 	if factions.is_empty():
 		var fallback_faction_id: StringName = get_active_faction_id()
@@ -342,11 +318,11 @@ func debug_print_faction_territory_counts() -> void:
 	print("========== Territory Counts ==========")
 	print("Total cells =", cell_owner.size())
 
-	if faction_system == null:
+	if FactionSystem == null:
 		print("FactionSystem is null.")
 		return
 
-	for faction in faction_system.get_all_factions():
+	for faction in FactionSystem.get_all_factions():
 		if faction == null:
 			continue
 
@@ -363,15 +339,12 @@ func debug_print_faction_territory_counts() -> void:
 
 
 func _update_preview_from_screen_position(screen_position: Vector2) -> void:
-	if grid_system == null:
-		return
-
 	if _should_block_world_input_by_ui():
 		_clear_preview()
 		return
 
 	var world_position: Vector2 = _screen_to_world_position(screen_position)
-	var hover_cell: Vector2i = grid_system.world_to_cell(world_position)
+	var hover_cell: Vector2i = GridSystem.world_to_cell(world_position)
 
 	if hover_cell == current_hover_cell:
 		return

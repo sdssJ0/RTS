@@ -3,24 +3,14 @@ extends Node
 
 signal building_placed(building: BasicBuilding, config: BuildingConfig, cell: Vector2i)
 
-@export var grid_system_path: NodePath = "../GridSystem"
-@export var economy_system_path: NodePath = "../EconomySystem"
 @export var territory_system_path: NodePath = "../TerritorySystem"
 @export var building_root_path: NodePath = "../../World2D/BuildingRoot"
 
-@onready var grid_system: GridSystem = get_node_or_null(grid_system_path) as GridSystem
-@onready var economy_system: EconomySystem = get_node_or_null(economy_system_path) as EconomySystem
 @onready var territory_system: TerritorySystem = get_node_or_null(territory_system_path) as TerritorySystem
 @onready var building_root: Node2D = get_node_or_null(building_root_path) as Node2D
 
 
 func _ready() -> void:
-	if grid_system == null:
-		push_error("BuildingManager: GridSystem not found. Path = " + str(grid_system_path))
-
-	if economy_system == null:
-		push_error("BuildingManager: EconomySystem not found. Path = " + str(economy_system_path))
-
 	if territory_system == null:
 		push_error("BuildingManager: TerritorySystem not found. Path = " + str(territory_system_path))
 
@@ -41,16 +31,6 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 
 	print("BuildingManager: config =", config.display_name)
 	print("BuildingManager: target cell =", cell)
-
-	if grid_system == null:
-		push_error("BuildingManager: grid_system is null.")
-		print("========================================================")
-		return false
-
-	if economy_system == null:
-		push_error("BuildingManager: economy_system is null.")
-		print("========================================================")
-		return false
 
 	if territory_system == null:
 		push_error("BuildingManager: territory_system is null.")
@@ -73,13 +53,13 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	var size_in_cells: Vector2i = config.size_in_cells
 	var active_faction_id: StringName = territory_system.get_active_faction_id()
 
-	var grid_can_place: bool = grid_system.can_place_area(cell, size_in_cells)
+	var grid_can_place: bool = GridSystem.can_place_area(cell, size_in_cells)
 	var area_owned: bool = territory_system.is_area_owned_by_faction(
 		cell,
 		size_in_cells,
 		active_faction_id
 	)
-	var can_afford: bool = economy_system.can_afford_config(config)
+	var can_afford: bool = EconomySystem.can_afford_config(config)
 
 	print("BuildingManager place check:")
 	print("  active_faction_id =", active_faction_id)
@@ -117,7 +97,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		print("========================================================")
 		return false
 
-	if not economy_system.try_spend_config(config):
+	if not EconomySystem.try_spend_config(config):
 		print("BuildingManager: cannot place. Spend failed.")
 		print("========================================================")
 		return false
@@ -141,7 +121,6 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 
 	building.config = config
 	building.grid_cell = cell
-	building.economy_system = economy_system
 	building.is_preview = false
 	building.owner_faction_id = active_faction_id
 	building.owner_texture = territory_system.get_building_texture_for_faction(
@@ -149,14 +128,14 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 		config
 	)
 
-	building.position = grid_system.cell_to_world(cell)
+	building.position = GridSystem.cell_to_world(cell)
 
 	building_root.add_child(building)
 
 	building.apply_config_visual()
 	building.apply_owner_visual()
 
-	grid_system.occupy_area(cell, size_in_cells, building)
+	GridSystem.occupy_area(cell, size_in_cells, building)
 
 	print("BuildingManager: building placed successfully.")
 	print("  Building =", config.display_name)

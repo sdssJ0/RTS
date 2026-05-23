@@ -5,7 +5,6 @@ extends Node2D
 
 var config: BuildingConfig = null
 var grid_cell: Vector2i = Vector2i.ZERO
-var economy_system: EconomySystem = null
 var is_preview: bool = false
 
 var owner_faction_id: StringName = &""
@@ -29,9 +28,6 @@ func _process(delta: float) -> void:
 	if config == null:
 		return
 
-	if economy_system == null:
-		return
-
 	if not _has_valid_production():
 		return
 
@@ -40,7 +36,7 @@ func _process(delta: float) -> void:
 	if production_timer >= config.production_interval:
 		production_timer -= config.production_interval
 
-		economy_system.add_resource(
+		EconomySystem.add_resource(
 			config.production_resource_id,
 			config.production_amount
 		)

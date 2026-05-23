@@ -1,4 +1,3 @@
-class_name FactionSystem
 extends Node
 
 signal active_faction_changed(faction_id: StringName)
@@ -10,16 +9,28 @@ var active_faction_id: StringName = &""
 
 
 func _enter_tree() -> void:
+	_load_default_factions_if_empty()
 	_ensure_active_faction()
 
 
 func _ready() -> void:
+	_load_default_factions_if_empty()
 	_ensure_active_faction()
 
 	print("FactionSystem ready. Active faction =", active_faction_id)
 
 	for faction in get_all_factions():
 		print("  Faction:", faction.id, faction.display_name)
+
+
+func _load_default_factions_if_empty() -> void:
+	if not factions.is_empty():
+		return
+
+	factions = [
+		preload("res://resources/factions/BlueFaction.tres"),
+		preload("res://resources/factions/RedFaction.tres"),
+	]
 
 
 func _ensure_active_faction() -> void:

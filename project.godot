@@ -15,6 +15,13 @@ run/main_scene="uid://b42jaxf0lblvy"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GridSystem="*res://scripts/grid_system.gd"
+EconomySystem="*res://scripts/money_system.gd"
+FactionSystem="*res://scripts/faction_system.gd"
+BuildingCatalog="*res://scripts/building_catalog.gd"
+
 [display]
 
 window/size/viewport_width=1600

@@ -1,4 +1,3 @@
-class_name GridSystem
 extends Node
 
 @export var cell_size: int = 16
