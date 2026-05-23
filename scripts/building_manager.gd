@@ -26,7 +26,7 @@ func _ready() -> void:
 
 	if building_root == null:
 		push_error("BuildingManager: BuildingRoot not found. Path = " + str(building_root_path))
-
+#调试代码
 	print("BuildingManager ready.")
 
 
@@ -164,7 +164,7 @@ func try_place_building(config: BuildingConfig, cell: Vector2i) -> bool:
 	print("  Faction =", active_faction_id)
 	print("========================================================")
 
-	emit_signal("building_placed", building, config, cell)
+	emit_signal("building_placed", building, config, cell)#释放放置信号
 
 	return true
 

@@ -21,8 +21,8 @@ extends Camera2D
 @export_group("Zoom")
 @export var enable_mouse_wheel_zoom: bool = true
 @export var zoom_step: float = 1.12
-@export var min_zoom: float = 0.5
-@export var max_zoom: float = 3.0
+@export var min_zoom: float = 1.0
+@export var max_zoom: float = 5.0
 @export var zoom_to_mouse: bool = true
 
 @export_group("Edge Scroll")
