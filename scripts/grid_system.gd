@@ -1,8 +1,28 @@
 extends Node
 
-@export var cell_size: int = 16
+const MAP_CONFIG_PATH: String = "res://resources/map_config.tres"
+
+var map_config: MapConfig
+var cell_size: int = 16
+var columns: int = 100
+var rows: int = 100
 
 var occupied_cells: Dictionary = {}
+
+
+func _ready() -> void:
+	map_config = load(MAP_CONFIG_PATH) as MapConfig
+
+	if map_config == null:
+		push_error("GridSystem: failed to load MapConfig at " + MAP_CONFIG_PATH)
+		return
+
+	cell_size = map_config.cell_size
+	columns = map_config.columns
+	rows = map_config.rows
+
+	print("GridSystem ready. cell_size=", cell_size, " columns=", columns, " rows=", rows)
+
 
 func world_to_cell(world_position: Vector2) -> Vector2i:
 	return Vector2i(

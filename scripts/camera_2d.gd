@@ -6,7 +6,6 @@ extends Camera2D
 @export var use_map_bounds: bool = true
 
 @export var map_origin_cell: Vector2i = Vector2i.ZERO
-@export var map_size_in_cells: Vector2i = Vector2i(100, 100)
 @export var map_padding_pixels: float = 0.0
 
 @export_group("Keyboard Move")
@@ -229,6 +228,8 @@ func _get_visible_world_size() -> Vector2:
 
 func _get_map_world_rect() -> Rect2:
 	var cell_size: float = float(GridSystem.cell_size)
+	var map_columns: int = GridSystem.columns
+	var map_rows: int = GridSystem.rows
 
 	var map_position: Vector2 = Vector2(
 		map_origin_cell.x * cell_size,
@@ -236,8 +237,8 @@ func _get_map_world_rect() -> Rect2:
 	)
 
 	var map_size: Vector2 = Vector2(
-		map_size_in_cells.x * cell_size,
-		map_size_in_cells.y * cell_size
+		map_columns * cell_size,
+		map_rows * cell_size
 	)
 
 	map_position -= Vector2(map_padding_pixels, map_padding_pixels)

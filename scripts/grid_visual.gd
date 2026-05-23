@@ -1,14 +1,15 @@
 extends Node2D
 
-@export var cell_size: int = 16
-@export var columns: int = 100
-@export var rows: int = 100
 @export var line_color: Color = Color(1.0, 1.0, 1.0, 0.22)
 
 func _ready() -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var cell_size: int = GridSystem.cell_size
+	var columns: int = GridSystem.columns
+	var rows: int = GridSystem.rows
+
 	var width: int = columns * cell_size
 	var height: int = rows * cell_size
 
